@@ -1,0 +1,15 @@
+# Example Changes File
+
+This file demonstrates the Git upload workflow.
+
+## Changes Made:
+- Created this example file
+- Added documentation
+- Ready to commit and push
+
+## Git Commands Used:
+1. git add .
+2. git commit -m "Add example file"
+3. git push
+
+Date: $(Get-Date)
