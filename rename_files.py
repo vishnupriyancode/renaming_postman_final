@@ -226,21 +226,19 @@ def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
             "Protigrity": "false"
         }
         
-        # Generate random 11-digit number for KEY_CHK_DCN_NBR field
+        # Generate value for KEY_CHK_DCN_NBR: 7 random digits + "TEST" (e.g. 6905669TEST)
         # Check both root level and payload level for KEY_CHK_DCN_NBR
         if isinstance(existing_data, dict):
+            key_chk_value = str(random.randint(1000000, 9999999)) + "TEST"
             # Check root level
             if "KEY_CHK_DCN_NBR" in existing_data:
-                random_11_digit = str(random.randint(10000000000, 99999999999))
-                existing_data["KEY_CHK_DCN_NBR"] = random_11_digit
-                print(f"[INFO] Generated random 11-digit number for KEY_CHK_DCN_NBR (root level): {random_11_digit}")
-            
+                existing_data["KEY_CHK_DCN_NBR"] = key_chk_value
+                print(f"[INFO] Generated KEY_CHK_DCN_NBR (root level): {key_chk_value}")
             # Check payload level
             if "payload" in existing_data and isinstance(existing_data["payload"], dict):
                 if "KEY_CHK_DCN_NBR" in existing_data["payload"]:
-                    random_11_digit = str(random.randint(10000000000, 99999999999))
-                    existing_data["payload"]["KEY_CHK_DCN_NBR"] = random_11_digit
-                    print(f"[INFO] Generated random 11-digit number for KEY_CHK_DCN_NBR (payload level): {random_11_digit}")
+                    existing_data["payload"]["KEY_CHK_DCN_NBR"] = key_chk_value
+                    print(f"[INFO] Generated KEY_CHK_DCN_NBR (payload level): {key_chk_value}")
         
         # Always ensure header/footer structure is correct
         if has_correct_structure:
@@ -294,8 +292,7 @@ def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
 
 def apply_gbdf_clcl_id_generation(file_path):
     """
-    Generate random 11-digit number for CLCL_ID field in GBDF JSON files.
-    This function modifies the CLCL_ID field to have a random 11-digit value.
+    Generate value for CLCL_ID field in GBDF JSON files: 7 random digits + "TEST" (e.g. 6905669TEST).
     Handles root-level, nested payload structure, and GBDF claim_header path.
     
     Args:
@@ -309,8 +306,8 @@ def apply_gbdf_clcl_id_generation(file_path):
     def update_clcl_id(data, path_name):
         """Helper to update CLCL_ID at a given path."""
         if isinstance(data, dict) and "CLCL_ID" in data:
-            data["CLCL_ID"] = random_11_digit
-            print(f"[INFO] Generated random 11-digit number for CLCL_ID ({path_name}): {random_11_digit}")
+            data["CLCL_ID"] = clcl_id_value
+            print(f"[INFO] Generated CLCL_ID ({path_name}): {clcl_id_value}")
             return True
         return False
     
@@ -318,7 +315,7 @@ def apply_gbdf_clcl_id_generation(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             existing_data = json.load(f)
         
-        random_11_digit = str(random.randint(10000000000, 99999999999))
+        clcl_id_value = str(random.randint(1000000, 9999999)) + "TEST"
         clcl_id_updated = False
         
         # Check all possible paths for CLCL_ID
@@ -741,12 +738,17 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                     postman_collection_name = f"TS_01_REVENUE_WGS_CSBD_{edit_id}_{code}"
             
             # File-based name for Bruno: use config postman_file_name, or derive from collection name + regression/smoke
+            test_type = "regression" if "regression" in dest_dir else "smoke"
             if postman_file_name:
-                custom_filename = postman_file_name
+                # Append test type so filename and collection name match (e.g. covid_wgs_csbd_RULEEM000001_W04_regression)
+                base_stem = os.path.splitext(postman_file_name)[0]
+                custom_filename = f"{base_stem}_{test_type}.json"
             else:
-                test_type = "regression" if "regression" in dest_dir else "smoke"
                 slug = re.sub(r"[^\w\-]", "_", postman_collection_name).strip("_")
                 custom_filename = f"{slug}_{test_type}.json"
+            
+            # Collection display name in Postman = filename stem (so imported collection shows e.g. covid_wgs_csbd_RULEEM000001_W04_regression)
+            collection_display_name = os.path.splitext(custom_filename)[0]
             
             # STAGE 2.3: COLLECTION GENERATION
             # ===============================
@@ -755,11 +757,11 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
             is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir
             
             # Generate collection (wgs_kernal vs wgs_csbd sets meta-transid in HEADERS)
-            collection_path = generator.generate_postman_collection(postman_collection_name, custom_filename, is_gbdf_model, is_wgs_kernal)
+            collection_path = generator.generate_postman_collection(collection_display_name, custom_filename, is_gbdf_model, is_wgs_kernal)
             
             if collection_path:
                 print(f"Postman collection generated: {collection_path}")
-                print(f"Collection name: {postman_collection_name}")
+                print(f"Collection name: {collection_display_name}")
                 print("\nReady for API testing!")
                 print("=" * 60)
                 print("To use this collection:")

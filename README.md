@@ -353,55 +353,79 @@ renaming_jsons/
 **✅ All commands have been tested and verified to work correctly:**
 
 ### WGS_CSBD Models (Healthcare Claims Processing)
-```bash
-# Process specific TS models (WGS_CSBD flag required)
-python main_processor.py --wgs_csbd --CSBDTS01    # Process TS01 model (Covid) - edit ID: RULEEM000001
-python main_processor.py --wgs_csbd --CSBDTS02    # Process TS02 model (Laterality Policy-Disgnosis to Diagnosis) - edit ID: RULELATE000001
-python main_processor.py --wgs_csbd --CSBDTS03    # Process TS03 model (Revenue code Services not payable on Facility claim Sub Edit 5) - edit ID: RULEREVE000005
-python main_processor.py --wgs_csbd --CSBDTS04    # Process TS04 model (Revenue code Services not payable on Facility claim Sub Edit 4) - edit ID: RULEREVE000004
-python main_processor.py --wgs_csbd --CSBDTS05    # Process TS05 model (Revenue code Services not payable on Facility claim Sub Edit 3) - edit ID: RULEREVE000003
-python main_processor.py --wgs_csbd --CSBDTS06    # Process TS06 model (Revenue code Services not payable on Facility claim Sub Edit 2) - edit ID: RULEREVE000002
-python main_processor.py --wgs_csbd --CSBDTS07    # Process TS07 model (Revenue code Services not payable on Facility claim Sub Edit 1) - edit ID: RULEREVE000001
-python main_processor.py --wgs_csbd --CSBDTS08    # Process TS08 model (Lab panel Model) - edit ID: RULELAB0000009
-python main_processor.py --wgs_csbd --CSBDTS09    # Process TS09 model (Device Dependent Procedures(R1)-1B) - edit ID: RULEDEVI000003
-python main_processor.py --wgs_csbd --CSBDTS10    # Process TS10 model (Recovery Room Reimbursement) - edit ID: RULERECO000001
-python main_processor.py --wgs_csbd --CSBDTS11    # Process TS11 model (Revenue Code to HCPCS Xwalk-1B) - edit ID: RULERECO000003
-python main_processor.py --wgs_csbd --CSBDTS12    # Process TS12 model (Incidentcal Services Facility) - edit ID: RULEINCI000001
-python main_processor.py --wgs_csbd --CSBDTS13    # Process TS13 model (Revenue model CR v3) - edit ID: RULERCE0000006
-python main_processor.py --wgs_csbd --CSBDTS14    # Process TS14 model (HCPCS to Revenue Code Xwalk) - edit ID: RULERCE000001
-python main_processor.py --wgs_csbd --CSBDTS15    # Process TS15 model (WGS_CSBD) - edit ID: RULERCE000005
-python main_processor.py --wgs_csbd --CSBDTS20    # Process TS20 model (RadioservicesbilledwithoutRadiopharma) - edit ID: RULERBWR000001
-python main_processor.py --wgs_csbd --CSBDTS46    # Process TS46 model (Multiple E&M Same day) - edit ID: RULEEMSD000002
-python main_processor.py --wgs_csbd --CSBDTS47    # Process TS47 model (Multiple Billing of Obstetrical Services) - edit ID: RULEMBOS000001
-python main_processor.py --wgs_csbd --CSBDTS48    # Process TS48 model (Revenue code to HCPCS Alignment edit) - edit ID: RULERCTH00001
-python main_processor.py --wgs_csbd --CSBDTS49    # Process TS49 model (Observation_Services) - edit ID: RULEOBSER00001
-python main_processor.py --wgs_csbd --CSBDTS50    # Process TS50 model (Observation_Services) - edit ID: RULEOBSER00002
-python main_processor.py --wgs_csbd --CSBDTS51    # Process TS51 model (Observation_Services) - edit ID: RULEOBSER00003
-python main_processor.py --wgs_csbd --CSBDTS52    # Process TS52 model (Observation_Services) - edit ID: RULEOBSER00004
-python main_processor.py --wgs_csbd --CSBDTS53    # Process TS53 model (Observation_Services) - edit ID: RULEOBSER00005
-python main_processor.py --wgs_csbd --CSBDTS54    # Process TS54 model (Observation_Services) - edit ID: RULEOBSER00006
-python main_processor.py --wgs_csbd --CSBDTS55    # Process TS55 model (Observation_Services) - edit ID: RULEOBSER00007
-python main_processor.py --wgs_csbd --CSBDTS56    # Process TS56 model (Observation_Services) - edit ID: RULEOBSER00008
-python main_processor.py --wgs_csbd --CSBDTS57    # Process TS57 model (add_on without base) - edit ID: RULERADDON00001
-python main_processor.py --wgs_csbd --CSBDTS58    # Process TS58 model (Expansion) - edit ID: RULESUB4000001
-python main_processor.py --wgs_csbd --CSBDTS59    # Process TS59 model (Wgs) - edit ID: RULESUB4000001
-python main_processor.py --wgs_csbd --CSBDTS60    # Process TS60 model (Inpatient) - edit ID: RULEINPCC00001
-python main_processor.py --wgs_csbd --CSBDTS61    # Process TS61 model (Op) - edit ID: RULEOPBS000001
-python main_processor.py --wgs_csbd --CSBDTS62    # Process TS62 model (Anesthesia) - edit ID: RULEANES000001
-python main_processor.py --wgs_csbd --CSBDTS63    # Process TS63 model (Bundled) - edit ID: RULEBDLG000004
-python main_processor.py --wgs_csbd --CSBDTS64    # Process TS64 model (Clia) - edit ID: RULECLIA00001
-python main_processor.py --wgs_csbd --CSBDTS65    # Process TS65 model (Medical) - edit ID: RULEJWME000001
-python main_processor.py --wgs_csbd --CSBDTS66    # Process TS66 model (Missing) - edit ID: RULEMFTM000001
-python main_processor.py --wgs_csbd --CSBDTS67    # Process TS67 model (Ncci) - edit ID: RULENCCIPTP001
-python main_processor.py --wgs_csbd --CSBDTS68    # Process TS68 model (Ndc) - edit ID: RULENDC000001
-python main_processor.py --wgs_csbd --CSBDTS70    # Process TS70 model (Correct) - edit ID: RULERCRO000001
-python main_processor.py --wgs_csbd --CSBDTS71    # Process TS71 model (Revenue) - edit ID: RULERCTH000001
-python main_processor.py --wgs_csbd --CSBDTS73    # Process TS73 model (Unacceptable) - edit ID: RULEUNAC000001
-python main_processor.py --wgs_csbd --CSBDTS74    # Process TS74 model - edit ID: RULEEM0000012 MNP Model
-python main_processor.py --wgs_csbd --CSBDTS75    # Process TS75 model (Preventive) - edit ID: RULEPREV000001
 
-# Process all WGS_CSBD models at once
-python main_processor.py --wgs_csbd --all     # Process all WGS_CSBD models
+**Format:** `python main_processor.py --wgs_csbd --CSBDTS<NN>`. Use `python main_processor.py --wgs_csbd --list` to see models currently discoverable from `source_folder/WGS_CSBD`. Static config supports CSBDTS01–CSBDTS73; with dynamic discovery only models that have source folders are processed.
+
+**RefDB support:** Use `--refdb` with CSBDTS46, CSBDTS47, CSBDTS59, or CSBDTS75 for refdb value replacement.
+
+```bash
+# Process specific TS models (WGS_CSBD flag required; use --CSBDTS<NN> format)
+python main_processor.py --wgs_csbd --CSBDTS01    # TS01 Covid - edit ID: RULEEM000001
+python main_processor.py --wgs_csbd --CSBDTS02    # TS02 Expansion - edit ID: RULESUB4000001
+python main_processor.py --wgs_csbd --CSBDTS03    # TS03 Op - edit ID: RULEOPBS000001
+python main_processor.py --wgs_csbd --CSBDTS04    # TS04 Anesthesia - edit ID: RULEANES000001
+python main_processor.py --wgs_csbd --CSBDTS05    # TS05 Bundled - edit ID: RULEBDLG000004
+python main_processor.py --wgs_csbd --CSBDTS06    # TS06 Clia - edit ID: RULECLIA00001
+python main_processor.py --wgs_csbd --CSBDTS07    # TS07 Medical - edit ID: RULEJWME000001
+python main_processor.py --wgs_csbd --CSBDTS08    # TS08 Missing - edit ID: RULEMFTM000001
+python main_processor.py --wgs_csbd --CSBDTS09    # TS09 Ncci - edit ID: RULENCCIPTP001
+python main_processor.py --wgs_csbd --CSBDTS10    # TS10 Ndc - edit ID: RULENDC000001
+python main_processor.py --wgs_csbd --CSBDTS11    # TS11 Correct - edit ID: RULERCRO000001
+python main_processor.py --wgs_csbd --CSBDTS12    # TS12 Revenue - edit ID: RULERCTH000001
+python main_processor.py --wgs_csbd --CSBDTS13    # TS13 Unacceptable - edit ID: RULEUNAC000001
+python main_processor.py --wgs_csbd --CSBDTS14    # TS14 Wgs - edit ID: RULEEM0000012 MNP Model
+python main_processor.py --wgs_csbd --CSBDTS15    # TS15 Laterality - edit ID: RULELATE000001
+python main_processor.py --wgs_csbd --CSBDTS16    # TS16 Revenue - edit ID: RULEREVE000005
+python main_processor.py --wgs_csbd --CSBDTS17    # TS17 Revenue - edit ID: RULEREVE000004
+python main_processor.py --wgs_csbd --CSBDTS18    # TS18 Revenue - edit ID: RULEREVE000003
+python main_processor.py --wgs_csbd --CSBDTS19    # TS19 Revenue - edit ID: RULEREVE000001
+python main_processor.py --wgs_csbd --CSBDTS20    # TS20 Revenue - edit ID: RULEREVE000002
+python main_processor.py --wgs_csbd --CSBDTS21    # TS21 Lab - edit ID: RULELAB0000009
+python main_processor.py --wgs_csbd --CSBDTS22    # TS22 Device - edit ID: RULEDEVI000003
+python main_processor.py --wgs_csbd --CSBDTS23    # TS23 Recovery - edit ID: RULERECO000001
+python main_processor.py --wgs_csbd --CSBDTS24    # TS24 Revenue - edit ID: RULEBEHA000003
+python main_processor.py --wgs_csbd --CSBDTS25    # TS25 Incidental - edit ID: RULEINCI000001
+python main_processor.py --wgs_csbd --CSBDTS26    # TS26 Revenue - edit ID: RULERCE0000006
+python main_processor.py --wgs_csbd --CSBDTS27    # TS27 Hcpcs - edit ID: RULEBEHA000001
+python main_processor.py --wgs_csbd --CSBDTS28    # TS28 Revenue - edit ID: RULERCE0000005
+python main_processor.py --wgs_csbd --CSBDTS29    # TS29 Sick - edit ID: RULEEM000002_refdb
+python main_processor.py --wgs_csbd --CSBDTS30    # TS30 Mutually - edit ID: RULEMUTU000001
+python main_processor.py --wgs_csbd --CSBDTS31    # TS31 Multiple E&M Same day - edit ID: RULEEMSD000001
+python main_processor.py --wgs_csbd --CSBDTS32    # TS32 Radiology - edit ID: RULERBWR000001
+python main_processor.py --wgs_csbd --CSBDTS33    # TS33 Manifestation - edit ID: RULEMAN000004
+python main_processor.py --wgs_csbd --CSBDTS46    # TS46 Multiple E&M Same day (refdb) - edit ID: RULEEMSD000002
+python main_processor.py --wgs_csbd --CSBDTS47    # TS47 Multiple Billing of Obstetrical Services (refdb) - edit ID: RULEMBOS000001
+python main_processor.py --wgs_csbd --CSBDTS48    # TS48 Revenue code to HCPCS Alignment - edit ID: RULERCTH00001
+python main_processor.py --wgs_csbd --CSBDTS49    # TS49 Observation Services - edit ID: RULEOBSER00001
+python main_processor.py --wgs_csbd --CSBDTS50    # TS50 Observation Services - edit ID: RULEOBSER00002
+python main_processor.py --wgs_csbd --CSBDTS51    # TS51 Observation Services - edit ID: RULEOBSER00003
+python main_processor.py --wgs_csbd --CSBDTS52    # TS52 Observation Services - edit ID: RULEOBSER00004
+python main_processor.py --wgs_csbd --CSBDTS53    # TS53 Observation Services - edit ID: RULEOBSER00005
+python main_processor.py --wgs_csbd --CSBDTS54    # TS54 Observation Services - edit ID: RULEOBSER00006
+python main_processor.py --wgs_csbd --CSBDTS55    # TS55 Observation Services - edit ID: RULERCTH00007
+python main_processor.py --wgs_csbd --CSBDTS56    # TS56 Observation Services - edit ID: RULERCTH00008
+python main_processor.py --wgs_csbd --CSBDTS57    # TS57 add_on without base - edit ID: RULERADDON00001
+python main_processor.py --wgs_csbd --CSBDTS58    # TS58 Expansion - edit ID: RULESUB4000001
+python main_processor.py --wgs_csbd --CSBDTS59    # TS59 Antepartum Services (refdb) - edit ID: RULEANTP000001
+python main_processor.py --wgs_csbd --CSBDTS60    # TS60 Inpatient - edit ID: RULEINPCC00001
+python main_processor.py --wgs_csbd --CSBDTS61    # TS61 Op - edit ID: RULEOPBS000001
+python main_processor.py --wgs_csbd --CSBDTS62    # TS62 Anesthesia - edit ID: RULEANES000001
+python main_processor.py --wgs_csbd --CSBDTS63    # TS63 Bundled - edit ID: RULEBDLG000004
+python main_processor.py --wgs_csbd --CSBDTS64    # TS64 Clia - edit ID: RULECLIA00001
+python main_processor.py --wgs_csbd --CSBDTS65    # TS65 Medical - edit ID: RULEJWME000001
+python main_processor.py --wgs_csbd --CSBDTS66    # TS66 Missing - edit ID: RULEMFTM000001
+python main_processor.py --wgs_csbd --CSBDTS67    # TS67 Ncci - edit ID: RULENCCIPTP001
+python main_processor.py --wgs_csbd --CSBDTS68    # TS68 Ndc - edit ID: RULENDC000001
+python main_processor.py --wgs_csbd --CSBDTS70    # TS70 Correct - edit ID: RULERCRO000001
+python main_processor.py --wgs_csbd --CSBDTS71    # TS71 Revenue - edit ID: RULERCTH000001
+python main_processor.py --wgs_csbd --CSBDTS73    # TS73 Unacceptable - edit ID: RULEUNAC000001
+python main_processor.py --wgs_csbd --CSBDTS75    # TS75 Preventive (refdb) - edit ID: RULEPREV000001
+
+# Process all discovered WGS_CSBD models
+python main_processor.py --wgs_csbd --all
+
+# With refdb for supported models (CSBDTS46, CSBDTS47, CSBDTS59, CSBDTS75)
+python main_processor.py --wgs_csbd --CSBDTS59 --refdb
 ```
 
 ## 📋 User Commands & Model Commands
@@ -469,116 +493,66 @@ python main_processor.py --gbdf_grs --all
 ```
 
 ### GBDF_MCR Models (Global Burden of Disease Foundation - Medical Claims Research)
+
+**Format:** `python main_processor.py --gbdf_mcr --GBDTS<NN>`. Use `python main_processor.py --gbdf_mcr --list` to see models discoverable from `source_folder/GBDF` (MCR folders only). Static config may include additional TS numbers.
+
 ```bash
-# Process specific GBDF MCR models (GBDF_MCR flag required - Recommended format: --GBDTSXX)
-python main_processor.py --gbdf_mcr --GBDTS47    # Process TS47 model (Covid) - edit ID: RULEEM000001
-python main_processor.py --gbdf_mcr --GBDTS62    # Process TS62 model (Unspecified_dx_code_outpt_MCR) - edit ID: RULEUSD00100_outpt_MCR
-python main_processor.py --gbdf_mcr --GBDTS70    # Process TS70 model (InappropriatePrimaryDiagnosis) - edit ID: RULE00000376
-python main_processor.py --gbdf_mcr --GBDTS138    # Process TS138 model (Multiple E&M Same day) - edit ID: RULEEMSD000002
-python main_processor.py --gbdf_mcr --GBDTS140    # Process TS140 model (NDC UOM Validation Edit Expansion Iprep-138) - edit ID: RULENDCUOM000001
-python main_processor.py --gbdf_mcr --GBDTS144    # Process TS144 model (Nebulizer A52466 IPERP-132) - edit ID: RULENEBU000001
-python main_processor.py --gbdf_mcr --GBDTS49    # Process TS49 model (Laterality) - edit ID: RULELATE000001
-python main_processor.py --gbdf_mcr --GBDTS50    # Process TS50 model (Psm) - edit ID: PSMEM000001
-python main_processor.py --gbdf_mcr --GBDTS52    # Process TS52 model (Psm) - edit ID: PSMEM000002
-python main_processor.py --gbdf_mcr --GBDTS54    # Process TS54 model (Psm) - edit ID: PSMEM000003
-python main_processor.py --gbdf_mcr --GBDTS56    # Process TS56 model (Psm) - edit ID: PSMEM000004
-python main_processor.py --gbdf_mcr --GBDTS58    # Process TS58 model (Manifestation) - edit ID: RULEMAN000004
-python main_processor.py --gbdf_mcr --GBDTS63    # Process TS63 model (Shadow) - edit ID: RULEAMBU000001
-python main_processor.py --gbdf_mcr --GBDTS64    # Process TS64 model (Unspecified Prof_MCR) - edit ID: RULEUSD00100_Prof_MCR
-python main_processor.py --gbdf_mcr --GBDTS65    # Process TS65 model (Gbdf) - edit ID: RULEAMBU000001
-python main_processor.py --gbdf_mcr --GBDTS66    # Process TS66 model (Gbdf) - edit ID: RULE00000022
-python main_processor.py --gbdf_mcr --GBDTS67    # Process TS67 model (Inaccurate) - edit ID: RULE00000022
-python main_processor.py --gbdf_mcr --GBDTS72    # Process TS72 model (Always) - edit ID: RULEALWA000001
-python main_processor.py --gbdf_mcr --GBDTS73    # Process TS73 model (Gbdf) - edit ID: RULEEXCL000001
-python main_processor.py --gbdf_mcr --GBDTS75    # Process TS75 model (Excludes) - edit ID: RULEEXCL000001
-python main_processor.py --gbdf_mcr --GBDTS123    # Process TS123 model (Anesthesia) - edit ID: RULEANES000001
-python main_processor.py --gbdf_mcr --GBDTS125    # Process TS125 model (Clia) - edit ID: RULECLIA00001
-python main_processor.py --gbdf_mcr --GBDTS126    # Process TS126 model (Clia) - edit ID: RULECLIA00001
-python main_processor.py --gbdf_mcr --GBDTS127    # Process TS127 model (Toxoid GBD-Facets-MCR_v38_sur) - edit ID: RULEIPVT000001
-python main_processor.py --gbdf_mcr --GBDTS129    # Process TS129 model (Gbdf) - edit ID: RULEIMMU000001
-python main_processor.py --gbdf_mcr --GBDTS131    # Process TS131 model (Gbdf) - edit ID: RULEKNEE000001
-python main_processor.py --gbdf_mcr --GBDTS134    # Process TS134 model (Gbdf) - edit ID: RULEJWME000001
-python main_processor.py --gbdf_mcr --GBDTS136    # Process TS136 model (Gbdf) - edit ID: RULEEM0000012
-python main_processor.py --gbdf_mcr --GBDTS142    # Process TS142 model (Gbdf) - edit ID: RULENDC000001
-python main_processor.py --gbdf_mcr --GBDTS146    # Process TS146 model (Gbdf) - edit ID: RULENMP000001
-python main_processor.py --gbdf_mcr --GBDTS148    # Process TS148 model (Gbdf) - edit ID: RULEOSTO000001
-python main_processor.py --gbdf_mcr --GBDTS150    # Process TS150 model (Gbdf) - edit ID: RULETRAC000001
-python main_processor.py --gbdf_mcr --GBDTS152    # Process TS152 model (Gbdf) - edit ID: RULERCRO000001
-python main_processor.py --gbdf_mcr --GBDTS154    # Process TS154 model (Gbdf) - edit ID: RULEIPDXE00001
-python main_processor.py --gbdf_mcr --GBDTS155    # Process TS155 model (Gbdf) - edit ID: RULEIPDXE00001
-python main_processor.py --gbdf_mcr --GBDTS156    # Process TS156 model (Geneticstesting) - edit ID: RULEGENE000001
-python main_processor.py --gbdf_mcr --GBDTS159    # Process TS159 model (Mcr) - edit ID: RULERCWP000001
-python main_processor.py --gbdf_mcr --GBDTS161    # Process TS161 model (Mcr) - edit ID: RULEPMAM000001
-python main_processor.py --gbdf_mcr --GBDTS162    # Process TS162 model (Gbdf) - edit ID: PSMEM000003_algo
-python main_processor.py --gbdf_mcr --GBDTS164    # Process TS164 model (Psm) - edit ID: PSMEM000004_algo
-python main_processor.py --gbdf_mcr --GBDTS166    # Process TS166 model (Sick) - edit ID: RULEEM000002_refdb
+# Process specific GBDF MCR models (--gbdf_mcr and --GBDTS<NN> required)
+python main_processor.py --gbdf_mcr --GBDTS01    # TS01 Covid GBDF MCR - edit ID: RULEEM000001
+python main_processor.py --gbdf_mcr --GBDTS48    # TS48 Multiple E&M Same day - edit ID: RULEEMSD000002
+python main_processor.py --gbdf_mcr --GBDTS60    # TS60 Unspecified dx code outpt - edit ID: RULEUSD00100
+python main_processor.py --gbdf_mcr --GBDTS61    # TS61 Unspecified dx code prof - edit ID: RULEUSD00100
+python main_processor.py --gbdf_mcr --GBDTS70    # TS70 InappropriatePrimaryDiagnosis - edit ID: RULE00000376
+python main_processor.py --gbdf_mcr --GBDTS138   # TS138 Multiple E&M Same day - edit ID: RULEEMSD000002
+python main_processor.py --gbdf_mcr --GBDTS140   # TS140 NDC UOM Validation Edit Expansion Iprep-138 - edit ID: RULENDCUOM000001
+python main_processor.py --gbdf_mcr --GBDTS144   # TS144 Nebulizer A52466 IPERP-132 - edit ID: RULENEBU000001
+python main_processor.py --gbdf_mcr --GBDTS146   # TS146 No match of Procedure code - edit ID: RULENMP000001
 
-# Process all GBDF MCR models at once
-python main_processor.py --gbdf_mcr --all     # Process all GBDF MCR models
-
+# Process all discovered GBDF MCR models
+python main_processor.py --gbdf_mcr --all
 ```
 
 ### GBDF_GRS Models (Global Burden of Disease Foundation - Global Research Services)
-```bash
-# Process specific GBDF GRS models (GBDF_GRS flag required - use --GBDTSXX format)
-python main_processor.py --gbdf_grs --GBDTS47    # Process TS47 model (Covid) - edit ID: RULEEM000001
-python main_processor.py --gbdf_grs --GBDTS48    # Process TS48 model (Laterality) - edit ID: RULELATE000001
-python main_processor.py --gbdf_grs --GBDTS51    # Process TS51 model (Psm) - edit ID: PSMEM000001
-python main_processor.py --gbdf_grs --GBDTS53    # Process TS53 model (Psm) - edit ID: PSMEM000002
-python main_processor.py --gbdf_grs --GBDTS55    # Process TS55 model (Psm) - edit ID: PSMEM000003
-python main_processor.py --gbdf_grs --GBDTS57    # Process TS57 model (Psm) - edit ID: PSMEM000004
-python main_processor.py --gbdf_grs --GBDTS61    # Process TS61 model (Unspecified) - edit ID: RULEUSD00100_Prof_GRS
-python main_processor.py --gbdf_grs --GBDTS63    # Process TS63 model (Unspecified Outpt_GRS) - edit ID: RULEUSD00100_Outpt_GRS
-python main_processor.py --gbdf_grs --GBDTS64    # Process TS64 model (Shadow) - edit ID: RULEAMBU000001
-python main_processor.py --gbdf_grs --GBDTS68    # Process TS68 model (Inaccurate) - edit ID: RULE00000022
-python main_processor.py --gbdf_grs --GBDTS69    # Process TS69 model (Inappropriate) - edit ID: RULE00000376
-python main_processor.py --gbdf_grs --GBDTS71    # Process TS71 model (Always) - edit ID: RULEALWA000001
-python main_processor.py --gbdf_grs --GBDTS74    # Process TS74 model (Excludes) - edit ID: RULEEXCL000001
-python main_processor.py --gbdf_grs --GBDTS122    # Process TS122 model (Geneticstesting) - edit ID: RULEGENE000001
-python main_processor.py --gbdf_grs --GBDTS124    # Process TS124 model (Anesthesia) - edit ID: RULEANES000001
-python main_processor.py --gbdf_grs --GBDTS128    # Process TS128 model (Toxoid GBD-Facets-GRS_v38_sur) - edit ID: RULEIPVT000001
-python main_processor.py --gbdf_grs --GBDTS130    # Process TS130 model (Gbdf) - edit ID: RULEIMMU000001
-python main_processor.py --gbdf_grs --GBDTS132    # Process TS132 model (Gbdf) - edit ID: RULEKNEE000001
-python main_processor.py --gbdf_grs --GBDTS133    # Process TS133 model (Manifestation) - edit ID: RULEMAN000004
-python main_processor.py --gbdf_grs --GBDTS135    # Process TS135 model (Gbdf) - edit ID: RULEJWME000001
-python main_processor.py --gbdf_grs --GBDTS137    # Process TS137 model (Gbdf) - edit ID: RULEEM0000012
-python main_processor.py --gbdf_grs --GBDTS139    # Process TS139 model (Multiple E&M Same day) - edit ID: RULEEMSD000002
-python main_processor.py --gbdf_grs --GBDTS141    # Process TS141 model (NDC UOM Validation Edit Expansion Iprep-138) - edit ID: RULENDCUOM000001
-python main_processor.py --gbdf_grs --GBDTS143    # Process TS143 model (Gbdf) - edit ID: RULENDC000001
-python main_processor.py --gbdf_grs --GBDTS145    # Process TS145 model (Nebulizer A52466 IPERP-132) - edit ID: RULENEBU000001
-python main_processor.py --gbdf_grs --GBDTS147    # Process TS147 model (Gbdf) - edit ID: RULENMP000001
-python main_processor.py --gbdf_grs --GBDTS149    # Process TS149 model (Gbdf) - edit ID: RULEOSTO000001
-python main_processor.py --gbdf_grs --GBDTS151    # Process TS151 model (Gbdf) - edit ID: RULETRAC000001
-python main_processor.py --gbdf_grs --GBDTS153    # Process TS153 model (Gbdf) - edit ID: RULERCRO000001
-python main_processor.py --gbdf_grs --GBDTS157    # Process TS157 model (Gbdf) - edit ID: RULEIPDXH00001
-python main_processor.py --gbdf_grs --GBDTS158    # Process TS158 model (Grs) - edit ID: RULERCWP000001
-python main_processor.py --gbdf_grs --GBDTS160    # Process TS160 model (Grs) - edit ID: RULEPMAM000001
-python main_processor.py --gbdf_grs --GBDTS163    # Process TS163 model (Gbdf) - edit ID: PSMEM000003_algo
-python main_processor.py --gbdf_grs --GBDTS165    # Process TS165 model (Psm) - edit ID: PSMEM000004_algo
-python main_processor.py --gbdf_grs --GBDTS167    # Process TS167 model (Sick) - edit ID: RULEEM000002_refdb
 
-# Process all GBDF GRS models at once
-python main_processor.py --gbdf_grs --all     # Process all GBDF GRS models
+**Format:** `python main_processor.py --gbdf_grs --GBDTS<NN>`. Use `python main_processor.py --gbdf_grs --list` to see models discoverable from `source_folder/GBDF` (GRS folders only). Static config may include additional TS numbers.
+
+```bash
+# Process specific GBDF GRS models (--gbdf_grs and --GBDTS<NN> required)
+python main_processor.py --gbdf_grs --GBDTS49    # TS49 Multiple E&M Same day GBDF GRS - edit ID: RULEEMSD000002
+python main_processor.py --gbdf_grs --GBDTS59    # TS59 Unspecified dx code - edit ID: RULEUSD00100
+python main_processor.py --gbdf_grs --GBDTS62    # TS62 Unspecified dx code prof - edit ID: RULEUSD00100
+python main_processor.py --gbdf_grs --GBDTS139   # TS139 Multiple E&M Same day - edit ID: RULEEMSD000002
+python main_processor.py --gbdf_grs --GBDTS141   # TS141 NDC UOM Validation Edit Expansion Iprep-138 - edit ID: RULENDCUOM000001
+python main_processor.py --gbdf_grs --GBDTS145   # TS145 Nebulizer A52466 IPERP-132 - edit ID: RULENEBU000001
+python main_processor.py --gbdf_grs --GBDTS147   # TS147 No match of Procedure code - edit ID: RULENMP000001
+
+# Process all discovered GBDF GRS models
+python main_processor.py --gbdf_grs --all
 ```
 
-### WGS_NYK Models (Working Group Standards - New York Kernal)
-```bash
-# Process specific WGS_NYK models (WGS_NYK flag required - Must use --NYKTSXX format)
-python main_processor.py --wgs_nyk --NYKTS122   # Process TS122 model (Revenue code to HCPCS Alignment edit) - edit ID: RULERCTH00001
-python main_processor.py --wgs_nyk --NYKTS123   # Process TS123 model (Observation_Services) - edit ID: RULEOBSER00001
-python main_processor.py --wgs_nyk --NYKTS124   # Process TS124 model (Observation_Services) - edit ID: RULEOBSER00002
-python main_processor.py --wgs_nyk --NYKTS125   # Process TS125 model (Observation_Services) - edit ID: RULEOBSER00003
-python main_processor.py --wgs_nyk --NYKTS126   # Process TS126 model (Observation_Services) - edit ID: RULEOBSER00004
-python main_processor.py --wgs_nyk --NYKTS127   # Process TS127 model (Observation_Services) - edit ID: RULEOBSER00005
-python main_processor.py --wgs_nyk --NYKTS128   # Process TS128 model (Observation_Services) - edit ID: RULEOBSER00006
-python main_processor.py --wgs_nyk --NYKTS129   # Process TS129 model (Observation_Services) - edit ID: RULEOBSER00007
-python main_processor.py --wgs_nyk --NYKTS130   # Process TS130 model (Observation_Services) - edit ID: RULEOBSER00008
-python main_processor.py --wgs_nyk --NYKTS132   # Process TS132 model (add_on without base) - edit ID: RULERADDON00001
-python main_processor.py --wgs_nyk --NYKTS149   # Process TS149 model (Preventative Medicine and Screening) - edit ID: RULEPREV00001
-python main_processor.py --wgs_nyk --NYKTS150   # Process TS150 model (Inpatient) - edit ID: RULEINPCC00001
+### WGS_NYK / WGS_KERNAL Models (Working Group Standards - New York Kernal)
 
-# Process all WGS_NYK models at once
-python main_processor.py --wgs_nyk --all     # Process all WGS_NYK models
+**Format:** `python main_processor.py --wgs_nyk --NYKTS<NN>`. Models are discovered from `source_folder/WGS_Kernal`. Use `python main_processor.py --wgs_nyk --list` to see available models. **RefDB support:** use `--refdb` with NYKTS123 (and NYKTS149 when configured).
+
+```bash
+# Process specific WGS_NYK models (--wgs_nyk and --NYKTS<NN> required)
+python main_processor.py --wgs_nyk --NYKTS122   # TS122 Revenue code to HCPCS Alignment - edit ID: RULERCTH00001
+python main_processor.py --wgs_nyk --NYKTS123   # TS123 Observation Services (refdb) - edit ID: RULEOBSER00001
+python main_processor.py --wgs_nyk --NYKTS124   # TS124 Observation Services - edit ID: RULEOBSER00002
+python main_processor.py --wgs_nyk --NYKTS125   # TS125 Observation Services - edit ID: RULEOBSER00003
+python main_processor.py --wgs_nyk --NYKTS126   # TS126 Observation Services - edit ID: RULEOBSER00004
+python main_processor.py --wgs_nyk --NYKTS127   # TS127 Observation Services - edit ID: RULEOBSER00005
+python main_processor.py --wgs_nyk --NYKTS128   # TS128 Observation Services - edit ID: RULEOBSER00006
+python main_processor.py --wgs_nyk --NYKTS129   # TS129 Observation Services - edit ID: RULEOBSER00007
+python main_processor.py --wgs_nyk --NYKTS130   # TS130 Observation Services - edit ID: RULEOBSER00008
+python main_processor.py --wgs_nyk --NYKTS132   # TS132 add_on without base - edit ID: RULERADDON00001
+python main_processor.py --wgs_nyk --NYKTS151   # TS151 - edit ID: RULERCTH00001
+
+# Process all discovered WGS_NYK models
+python main_processor.py --wgs_nyk --all
+
+# With refdb for supported models (e.g. NYKTS123)
+python main_processor.py --wgs_nyk --NYKTS123 --refdb
 ```
 
 ### Auto Edit Processor (Config from Excel)
@@ -606,36 +580,38 @@ python auto_edit_processor.py --dry-run
 ## 📊 Model Summary & Quick Reference
 
 ### Available Models Overview
-| Model Type | Count | TS Numbers | Description |
-|------------|-------|------------|-------------|
-| **WGS_CSBD** | 46 | TS01-TS15, TS20, TS46-TS75 (see `models_config.py`) | Healthcare Claims Processing |
-| **GBDF_MCR** | 62 | Full GBDF MCR static config set (TS47-TS166 range, see `models_config.py`) | Global Burden of Disease Foundation - Medical Claims Research |
-| **GBDF_GRS** | 54 | Full GBDF GRS static config set (TS47-TS167 range, see `models_config.py`) | Global Burden of Disease Foundation - Global Research Services |
-| **WGS_NYK** | 14 | TS122-TS130, TS132, TS149, TS150 (see `models_config.py`) | Working Group Standards - New York Kernal (Revenue code to HCPCS Alignment edit, Observation Services) |
-| **TOTAL** | **174** | | **All Available Models** |
+| Model Type | Discovered (dynamic) | TS Numbers (examples) | Description |
+|------------|---------------------|------------------------|-------------|
+| **WGS_CSBD** | 25 | TS01, TS46–TS57, TS59 (use `--wgs_csbd --list`) | Healthcare Claims Processing; static config TS01–TS73 |
+| **GBDF_MCR** | 18 | TS01, TS48, TS60, TS61, TS70, TS138, TS140, TS144, TS146 (use `--gbdf_mcr --list`) | Global Burden of Disease Foundation - Medical Claims Research |
+| **GBDF_GRS** | 14 | TS49, TS59, TS62, TS139, TS141, TS145, TS147 (use `--gbdf_grs --list`) | Global Burden of Disease Foundation - Global Research Services |
+| **WGS_NYK** (WGS_KERNAL) | 22 | TS122–TS130, TS132, TS151 (use `--wgs_nyk --list`) | Working Group Standards - New York Kernal (Observation Services, Revenue code to HCPCS) |
 
 ### Quick Command Reference
 ```bash
-# Process ALL models of each type
-python main_processor.py --wgs_csbd --all     # All 46 WGS_CSBD models
-python main_processor.py --gbdf_mcr --all     # All 62 GBDF MCR models  
-python main_processor.py --gbdf_grs --all     # All 54 GBDF GRS models
-python main_processor.py --wgs_nyk --all      # All 14 WGS_NYK models
+# Process ALL discovered models of each type
+python main_processor.py --wgs_csbd --all     # All discovered WGS_CSBD models
+python main_processor.py --gbdf_mcr --all     # All discovered GBDF MCR models
+python main_processor.py --gbdf_grs --all     # All discovered GBDF GRS models
+python main_processor.py --wgs_nyk --all      # All discovered WGS_NYK (WGS_KERNAL) models
 
-# Process ALL models of each type WITHOUT Postman generation
+# Process WITHOUT Postman generation
 python main_processor.py --wgs_csbd --all --no-postman
 python main_processor.py --gbdf_mcr --all --no-postman
 python main_processor.py --gbdf_grs --all --no-postman
 python main_processor.py --wgs_nyk --all --no-postman
 
-# Process ALL refdb-supported models with value replacement (WGS_CSBD: CSBDTS46, CSBDTS47, CSBDTS59; WGS_NYK: NYKTS123)
+# RefDB value replacement (WGS_CSBD: CSBDTS46, CSBDTS47, CSBDTS59, CSBDTS75; WGS_NYK: NYKTS123, NYKTS149)
 python main_processor.py --wgs_csbd --all --refdb
 python main_processor.py --wgs_nyk --all --refdb
 
-# List all available models
-python main_processor.py --list
+# List discoverable models for each type
+python main_processor.py --wgs_csbd --list
+python main_processor.py --gbdf_mcr --list
+python main_processor.py --gbdf_grs --list
+python main_processor.py --wgs_nyk --list
 
-# Get help
+# Help
 python main_processor.py --help
 ```
 

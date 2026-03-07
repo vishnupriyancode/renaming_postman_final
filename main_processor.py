@@ -446,9 +446,19 @@ Examples:
     # ======================================
     # Load model configurations with dynamic discovery
     try:
-        from models_config import get_models_config, get_model_by_ts
+        from models_config import get_models_config, get_model_by_ts, STATIC_MODELS_CONFIG
         models_config = get_models_config(use_dynamic=True, use_wgs_csbd_destination=args.wgs_csbd, use_gbd_mcr=args.gbdf_mcr, use_gbd_grs=args.gbdf_grs, use_wgs_nyk=args.wgs_nyk)
         print("Configuration loaded with dynamic discovery")
+        # When GBDF is requested and discovery returns 0 models, fall back to STATIC_MODELS_CONFIG
+        if not models_config and (args.gbdf_mcr or args.gbdf_grs):
+            if args.gbdf_mcr:
+                models_config = STATIC_MODELS_CONFIG.get("gbdf_mcr", [])
+                if models_config:
+                    print(f"Using STATIC_MODELS_CONFIG for GBDF MCR ({len(models_config)} models)")
+            elif args.gbdf_grs:
+                models_config = STATIC_MODELS_CONFIG.get("gbdf_grs", [])
+                if models_config:
+                    print(f"Using STATIC_MODELS_CONFIG for GBDF GRS ({len(models_config)} models)")
     except ImportError as e:
         print(f"Error: {e}")
         print("Please ensure models_config.py and dynamic_models.py exist.")

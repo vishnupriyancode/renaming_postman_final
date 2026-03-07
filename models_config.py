@@ -671,8 +671,8 @@ STATIC_MODELS_CONFIG = {
             "ts_number": "01",
             "edit_id": "RULEEM000001",
             "code": "v04",
-            "source_dir": "source_folder/GBDF/GBDTS_01_Covid_gbd_mcr_RULEEM000001_v04_sur/payloads/regression",
-            "dest_dir": "renaming_jsons/GBDTS/GBDTS_01_Covid_gbd_mcr_RULEEM000001_v04_dis/payloads/regression",
+            "source_dir": "source_folder/GBDF/GBDTS_01_Covid_gbdf_mcr_RULEEM000001_v04_sur/payloads/regression",
+            "dest_dir": "renaming_jsons/GBDTS/GBDTS_01_Covid_gbdf_mcr_RULEEM000001_v04_dis/payloads/regression",
             "postman_collection_name": "GBDTS_01_Covid_Collection",
             "postman_file_name": "covid_model_gbd_mcr_RULEEM000001_v04.json"
         },
@@ -1464,8 +1464,11 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbd_
                 # Also check folder_name as fallback for robustness
                 mcr_models = [
                     m for m in discovered_models 
-                    if ("gbd_mcr" in m.get("source_dir", "").lower() or "gbd_mcr" in m.get("folder_name", "").lower())
-                    and "gbd_grs" not in m.get("source_dir", "").lower() 
+                    if ("gbdf_mcr" in m.get("source_dir", "").lower() or "gbd_mcr" in m.get("source_dir", "").lower()
+                        or "gbdf_mcr" in m.get("folder_name", "").lower() or "gbd_mcr" in m.get("folder_name", "").lower())
+                    and "gbdf_grs" not in m.get("source_dir", "").lower()
+                    and "gbd_grs" not in m.get("source_dir", "").lower()
+                    and "gbdf_grs" not in m.get("folder_name", "").lower()
                     and "gbd_grs" not in m.get("folder_name", "").lower()
                 ]
                 if mcr_models:
@@ -1473,7 +1476,7 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbd_
                     return mcr_models
                 else:
                     print("No GBDF MCR models found via dynamic discovery, falling back to static config")
-                    return STATIC_MODELS_CONFIG.get("gbd_mcr", [])
+                    return STATIC_MODELS_CONFIG.get("gbdf_mcr", [])
             elif use_gbd_grs:
                 # Use dynamic discovery for GBDF GRS
                 discovered_models = discover_ts_folders("source_folder/GBDF", False)
@@ -1482,14 +1485,15 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbd_
                 # Also check folder_name as fallback for robustness
                 grs_models = [
                     m for m in discovered_models 
-                    if "gbd_grs" in m.get("source_dir", "").lower() or "gbd_grs" in m.get("folder_name", "").lower()
+                    if "gbdf_grs" in m.get("source_dir", "").lower() or "gbd_grs" in m.get("source_dir", "").lower()
+                    or "gbdf_grs" in m.get("folder_name", "").lower() or "gbd_grs" in m.get("folder_name", "").lower()
                 ]
                 if grs_models:
                     print(f"Dynamic discovery found {len(grs_models)} GBDF GRS models")
                     return grs_models
                 else:
                     print("No GBDF GRS models found via dynamic discovery, falling back to static config")
-                    return STATIC_MODELS_CONFIG.get("gbd_grs", [])
+                    return STATIC_MODELS_CONFIG.get("gbdf_grs", [])
             else:
                 # Use dynamic discovery for WGS_CSBD
                 discovered_models = discover_ts_folders("source_folder/WGS_CSBD", True)
@@ -1504,18 +1508,18 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbd_
             if use_wgs_nyk:
                 return STATIC_MODELS_CONFIG.get("wgs_kernal", [])
             elif use_gbd_mcr:
-                return STATIC_MODELS_CONFIG.get("gbd_mcr", [])
+                return STATIC_MODELS_CONFIG.get("gbdf_mcr", [])
             elif use_gbd_grs:
-                return STATIC_MODELS_CONFIG.get("gbd_grs", [])
+                return STATIC_MODELS_CONFIG.get("gbdf_grs", [])
             else:
                 return STATIC_MODELS_CONFIG.get("wgs_csbd", [])
     else:
         if use_wgs_nyk:
             return STATIC_MODELS_CONFIG.get("wgs_kernal", [])
         elif use_gbd_mcr:
-            return STATIC_MODELS_CONFIG.get("gbd_mcr", [])
+            return STATIC_MODELS_CONFIG.get("gbdf_mcr", [])
         elif use_gbd_grs:
-            return STATIC_MODELS_CONFIG.get("gbd_grs", [])
+            return STATIC_MODELS_CONFIG.get("gbdf_grs", [])
         else:
             return STATIC_MODELS_CONFIG.get("wgs_csbd", [])
 

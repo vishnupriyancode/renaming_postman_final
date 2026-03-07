@@ -1,12 +1,12 @@
 {
   "info": {
-    "name": "covid_wgs_csbd_RULEEM000001_W04_smoke",
-    "description": "API collection for covid_wgs_csbd_RULEEM000001_W04_smoke test cases",
+    "name": "covid_wgs_csbd_RULEEM000001_v04_regression_regression",
+    "description": "API collection for covid_wgs_csbd_RULEEM000001_v04_regression_regression test cases",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "TC#01_sample#RULEEM000001#W04#LR",
+      "name": "TC#01_sample#RULEEM000001#v04#LR",
       "request": {
         "method": "POST",
         "header": [

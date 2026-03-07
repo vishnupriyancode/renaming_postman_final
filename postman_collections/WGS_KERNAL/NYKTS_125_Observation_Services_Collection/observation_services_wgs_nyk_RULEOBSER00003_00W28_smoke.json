@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "NYKTS_125_Observation_Services_Collection API Collection",
-    "description": "API collection for NYKTS_125_Observation_Services_Collection test cases",
+    "name": "observation_services_wgs_nyk_RULEOBSER00003_00W28_smoke",
+    "description": "API collection for observation_services_wgs_nyk_RULEOBSER00003_00W28_smoke test cases",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
