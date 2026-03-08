@@ -30,9 +30,17 @@ MODEL_SHEET_MAPPING = {
     "WGS_CSBD": "wgs_csbd",
     "GBDF_MCR": "gbdf_mcr",  # GBDF MCR models
     "GBDF_GRS": "gbdf_grs",  # GBDF GRS models
+    "GBDF_MMP": "gbdf_mmp",  # GBDF MMP models
     "GBDF": "gbdf_mcr",  # Default to MCR for backward compatibility
     "KERNAL": "wgs_kernal"
 }
+
+
+def _excel_sheet_for_reading(sheet_name: str) -> str:
+    """Return the Excel sheet name to read/write. GBDF_MMP uses the GBDF sheet."""
+    if sheet_name == "GBDF_MMP":
+        return "GBDF"
+    return sheet_name
 
 
 def is_grs_edit(edit_string: str, sheet_name: str) -> bool:
@@ -49,6 +57,23 @@ def is_grs_edit(edit_string: str, sheet_name: str) -> bool:
     has_grs = bool(re.search(r'\bgrs\b', edit_lower)) or "gbdf_grs" in edit_lower
     has_mcr = bool(re.search(r'\bmcr\b', edit_lower)) or "gbdf_mcr" in edit_lower
     return has_grs and not has_mcr
+
+
+def is_mmp_edit(edit_string: str, sheet_name: str) -> bool:
+    """
+    Detect if an edit string indicates a GBDF MMP model.
+    """
+    if not edit_string or pd.isna(edit_string):
+        return False
+    if sheet_name == "GBDF_MMP":
+        return True
+    if sheet_name not in ["GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"]:
+        return False
+    edit_lower = str(edit_string).lower()
+    has_mmp = bool(re.search(r'\bmmp\b', edit_lower)) or "gbdf_mmp" in edit_lower
+    has_grs = bool(re.search(r'\bgrs\b', edit_lower)) or "gbdf_grs" in edit_lower
+    has_mcr = bool(re.search(r'\bmcr\b', edit_lower)) or "gbdf_mcr" in edit_lower
+    return has_mmp and not has_grs and not has_mcr
 
 
 def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optional[Dict[str, str]]:
@@ -180,10 +205,13 @@ def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optiona
         if not any(prefix in model_name_with_lob.lower() for prefix in ['wgs', 'csbd']):
             model_name_with_lob = f"wgs_csbd_{model_name_with_lob}"
     elif sheet_name in ["GBDF", "GBDF_MCR"]:
-        # Check if edit string contains 'grs' to determine GRS vs MCR
+        # Check if edit string contains 'grs' / 'mmp' to determine GRS / MMP vs MCR
         if 'grs' in edit_string.lower() and 'mcr' not in edit_string.lower():
             if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'grs']):
                 model_name_with_lob = f"gbdf_grs_{model_name_with_lob}"
+        elif 'mmp' in edit_string.lower() and 'grs' not in edit_string.lower() and 'mcr' not in edit_string.lower():
+            if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mmp']):
+                model_name_with_lob = f"gbdf_mmp_{model_name_with_lob}"
         else:
             # Default to MCR
             if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mcr']):
@@ -191,6 +219,9 @@ def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optiona
     elif sheet_name == "GBDF_GRS":
         if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'grs']):
             model_name_with_lob = f"gbdf_grs_{model_name_with_lob}"
+    elif sheet_name == "GBDF_MMP":
+        if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mmp']):
+            model_name_with_lob = f"gbdf_mmp_{model_name_with_lob}"
     elif sheet_name == "KERNAL":
         if not any(prefix in model_name_with_lob.lower() for prefix in ['wgs', 'nyk', 'kernal']):
             model_name_with_lob = f"wgs_nyk_{model_name_with_lob}"
@@ -339,7 +370,7 @@ def _get_sheet_df_with_edit_column(
     edit_column = _resolve_edit_column(df)
     if edit_column:
         return df, edit_column
-    for name in ("GBDF", "GBDF_MCR", "GBDF_GRS"):
+    for name in ("GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"):
         if sheet_name == name or actual_sheet == name:
             try:
                 df_alt = pd.read_excel(excel_path, sheet_name=actual_sheet, header=1)
@@ -541,6 +572,12 @@ def generate_config_entry(
         model_name = generate_model_name(edit_id, model_name_with_lob)
         # Use gbd_grs in path to match Excel GBDF sheet / models_config convention
         folder_name = f"{ts_prefix}_{ts_number}_{model_name}_gbd_grs_{edit_id}_{eob_code}"
+    elif model_type == "gbdf_mmp":
+        ts_prefix = "GBDTS"
+        source_base = "source_folder/GBDF"
+        dest_base = "renaming_jsons/GBDTS"
+        model_name = generate_model_name(edit_id, model_name_with_lob)
+        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_gbd_mmp_{edit_id}_{eob_code}"
     elif model_type == "wgs_kernal":
         ts_prefix = "NYKTS"
         source_base = "source_folder/WGS_Kernal"
@@ -599,6 +636,8 @@ def check_command_exists(
         cmd_pattern = f"GBDTS{ts_number}"
     elif model_type == "gbdf_grs":
         cmd_pattern = f"GBDTS{ts_number}"
+    elif model_type == "gbdf_mmp":
+        cmd_pattern = f"GBDTS{ts_number}"
     elif model_type == "wgs_kernal":
         cmd_pattern = f"NYKTS{ts_number}"
     else:
@@ -628,6 +667,8 @@ def generate_command(ts_number: str, model_type: str = "wgs_csbd") -> str:
         return f"python main_processor.py --gbdf_mcr --GBDTS{ts_number}"
     elif model_type == "gbdf_grs":
         return f"python main_processor.py --gbdf_grs --GBDTS{ts_number}"
+    elif model_type == "gbdf_mmp":
+        return f"python main_processor.py --gbdf_mmp --GBDTS{ts_number}"
     elif model_type == "wgs_kernal":
         return f"python main_processor.py --wgs_nyk --NYKTS{ts_number}"
     else:
@@ -673,13 +714,16 @@ def sync_config_from_excel(
         List of config updates applied
     """
     excel_data = read_edits_list(excel_path)
-    actual_sheet = _resolve_sheet_name(excel_data, sheet_name)
+    physical_sheet = _excel_sheet_for_reading(sheet_name)
+    actual_sheet = _resolve_sheet_name(excel_data, physical_sheet)
     if actual_sheet is None:
-        print(f"[ERROR] Sheet '{sheet_name}' not found (available: {list(excel_data.keys())})")
+        print(f"[ERROR] Sheet '{physical_sheet}' not found (available: {list(excel_data.keys())})")
         return []
-    
-    if actual_sheet != sheet_name:
-        print(f"[INFO] Using sheet '{actual_sheet}' (case-insensitive match for '{sheet_name}')")
+
+    if actual_sheet != physical_sheet:
+        print(f"[INFO] Using sheet '{actual_sheet}' (case-insensitive match for '{physical_sheet}')")
+    if sheet_name == "GBDF_MMP":
+        print(f"[INFO] Syncing MMP models from sheet '{actual_sheet}' (--sheet GBDF_MMP)")
     df, edit_column = _get_sheet_df_with_edit_column(excel_path, excel_data, sheet_name, actual_sheet)
     if not edit_column:
         print("[ERROR] Could not find the edit details column")
@@ -708,7 +752,9 @@ def sync_config_from_excel(
         edit_str_lower = str(edit_string).lower()
         if "note:" in edit_str_lower and "python main_processor.py" in edit_str_lower:
             continue
-        
+        if sheet_name == "GBDF_MMP" and not is_mmp_edit(edit_string, "GBDF_MMP"):
+            continue
+
         test_suite_id = row.get(ts_id_column, "")
         if pd.isna(test_suite_id) or not str(test_suite_id).strip():
             continue
@@ -730,7 +776,12 @@ def sync_config_from_excel(
         edit_id = parsed["edit_id"]
         eob_code = parsed["eob_code"]
         model_name_with_lob = parsed["model_name_with_lob"]
-        row_model_type = "gbdf_grs" if (base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name)) else base_model_type
+        if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
+            row_model_type = "gbdf_mmp"
+        elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
+            row_model_type = "gbdf_grs"
+        else:
+            row_model_type = base_model_type
         
         current_config = config_by_type.get(row_model_type, [])
         existing_entry = None
@@ -797,7 +848,7 @@ def update_cmd_status_from_config(
         return False
 
     # Build (edit_id, code) sets for all model types in STATIC_MODELS_CONFIG
-    config_model_types = ("wgs_csbd", "gbdf_mcr", "gbdf_grs", "wgs_kernal")
+    config_model_types = ("wgs_csbd", "gbdf_mcr", "gbdf_grs", "gbdf_mmp", "wgs_kernal")
     config_pairs = {mt: set() for mt in config_model_types}
     for model_type in config_model_types:
         for entry in STATIC_MODELS_CONFIG.get(model_type, []):
@@ -816,7 +867,7 @@ def update_cmd_status_from_config(
         if MODEL_SHEET_MAPPING.get(name) in config_pairs
     ]
     if not sheets_to_process:
-        print("[INFO] No sheets (WGS_CSBD, GBDF, GBDF_MCR, GBDF_GRS, KERNAL) found in Excel")
+        print("[INFO] No sheets (WGS_CSBD, GBDF, GBDF_MCR, GBDF_GRS, GBDF_MMP, KERNAL) found in Excel")
         return True
 
     updated_count = 0
@@ -839,11 +890,12 @@ def update_cmd_status_from_config(
             parsed = parse_edit_string(edit_string, sheet_name=sheet_name)
             if not parsed:
                 continue
-            row_model_type = (
-                "gbdf_grs"
-                if (base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name))
-                else base_model_type
-            )
+            if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
+                row_model_type = "gbdf_mmp"
+            elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
+                row_model_type = "gbdf_grs"
+            else:
+                row_model_type = base_model_type
             if row_model_type not in config_pairs:
                 continue
             edit_id = str(parsed["edit_id"]).strip()
@@ -887,10 +939,14 @@ def process_edits_from_excel(
     
     # Read Excel file
     excel_data = read_edits_list(excel_path)
-    actual_sheet = _resolve_sheet_name(excel_data, sheet_name)
+    # GBDF_MMP reads from the GBDF sheet; other sheets use their own name
+    physical_sheet = _excel_sheet_for_reading(sheet_name)
+    actual_sheet = _resolve_sheet_name(excel_data, physical_sheet)
     if actual_sheet is None:
-        print(f"[ERROR] Sheet '{sheet_name}' not found in Excel file")
+        print(f"[ERROR] Sheet '{physical_sheet}' not found in Excel file (for --sheet {sheet_name})")
         return [], [], []
+    if sheet_name == "GBDF_MMP":
+        print(f"[INFO] Reading MMP models from sheet '{actual_sheet}' (--sheet GBDF_MMP)")
 
     df, edit_column = _get_sheet_df_with_edit_column(excel_path, excel_data, sheet_name, actual_sheet)
     if not edit_column:
@@ -926,6 +982,10 @@ def process_edits_from_excel(
         if "note:" in edit_str_lower and "python main_processor.py" in edit_str_lower:
             print(f"\n[SKIP] Row {idx + 1}: Note row (already has command)")
             continue
+
+        # When processing GBDF_MMP, only process rows that are MMP (from GBDF sheet)
+        if sheet_name == "GBDF_MMP" and not is_mmp_edit(edit_string, "GBDF_MMP"):
+            continue
         
         # Check if command already exists (warn but still process)
         cmd_status = row.get("Cmd status", "")
@@ -935,10 +995,13 @@ def process_edits_from_excel(
             print(f"\n[WARNING] Row {idx + 1}: Command already created in Excel")
             print(f"  [INFO] Argument is already in use @edits_list.xlsx")
         
-        # Determine model type for this row (handle GRS in GBDF sheets)
+        # Determine model type for this row (handle GRS/MMP in GBDF sheets)
         base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "wgs_csbd")
         row_model_type = base_model_type
-        if base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
+        if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
+            row_model_type = "gbdf_mmp"
+            print("  [INFO] MMP detected in details; using gbdf_mmp config")
+        elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
             row_model_type = "gbdf_grs"
             print("  [INFO] GRS detected in details; using gbdf_grs config")
         
@@ -1389,7 +1452,7 @@ def fix_command_mismatch_in_excel(
         if not ts_id_column or "generate_command" not in df.columns:
             continue
         edit_column = _resolve_edit_column(df)
-        if not edit_column and sheet_name in ("GBDF", "GBDF_MCR", "GBDF_GRS"):
+        if not edit_column and sheet_name in ("GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"):
             try:
                 df_alt = pd.read_excel(excel_path, sheet_name=sheet_name, header=1)
                 edit_column = _resolve_edit_column(df_alt)
@@ -1415,7 +1478,9 @@ def fix_command_mismatch_in_excel(
             row_model_type = base_model_type
             if base_model_type == "gbdf_mcr" and edit_column:
                 edit_string = row.get(edit_column, "")
-                if is_grs_edit(edit_string, sheet_name):
+                if is_mmp_edit(edit_string, sheet_name):
+                    row_model_type = "gbdf_mmp"
+                elif is_grs_edit(edit_string, sheet_name):
                     row_model_type = "gbdf_grs"
             correct_command = generate_command(ts_number, row_model_type)
             current = str(row.get("generate_command", "") or "").strip()
@@ -1680,8 +1745,8 @@ def main():
     if config_updates or generated_configs:
         sort_config_by_ts_number(config_path)
     
-    # Update Excel file
-    update_excel_file(args.excel, args.sheet, excel_updates)
+    # Update Excel file (use physical sheet: GBDF for GBDF_MMP)
+    update_excel_file(args.excel, _excel_sheet_for_reading(args.sheet), excel_updates)
     
     print(f"\n{'='*60}")
     print("Processing complete!")

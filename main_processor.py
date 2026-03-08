@@ -50,6 +50,7 @@ def _postman_enabled_for_collection(collection_key: str) -> bool:
 POSTMAN_ENABLED_WGS_CSBD = _postman_enabled_for_collection("WGS_CSBD")
 POSTMAN_ENABLED_GBDF_MCR = _postman_enabled_for_collection("GBDF_MCR")
 POSTMAN_ENABLED_GBDF_GRS = _postman_enabled_for_collection("GBDF_GRS")
+POSTMAN_ENABLED_GBDF_MMP = _postman_enabled_for_collection("GBDF_MMP")
 POSTMAN_ENABLED_WGS_KERNAL = _postman_enabled_for_collection("WGS_KERNAL")
 try:
     from report_generate import (
@@ -161,7 +162,9 @@ def process_multiple_models(models_config, generate_postman=True, model_type=Non
                 dest_dir=dest_dir,
                 generate_postman=generate_postman,
                 postman_collection_name=postman_collection_name,
-                excel_reporter=excel_reporter
+                postman_file_name=model_config.get("postman_file_name"),
+                excel_reporter=excel_reporter,
+                ts_number=model_config.get("ts_number"),
             )
             
             if renamed_files:
@@ -316,6 +319,10 @@ Examples:
     # Add GBDF GRS flag
     parser.add_argument("--gbdf_grs", action="store_true",
                        help="Process GBDF GRS models (required for GBDF GRS model processing)")
+
+    # Add GBDF MMP flag
+    parser.add_argument("--gbdf_mmp", action="store_true",
+                       help="Process GBDF MMP models (required for GBDF MMP model processing)")
     
     # Add model-specific arguments for available models
     # Note: WGS_CSBD models (TS01-TS15, TS20, TS46) now use --CSBDTSXX format only
@@ -413,7 +420,8 @@ Examples:
     # Example: --gbdf_grs --GBDTS49 -> processes TS49 model in GBDF GRS context
     gbdf_mcr_ts_models = []
     gbdf_grs_ts_models = []
-    
+    gbdf_mmp_ts_models = []
+
     if args.gbdf_mcr:
         # Process unknown arguments to find --GBDTSXX patterns for MCR
         for arg in unknown_args:
@@ -437,20 +445,30 @@ Examples:
                     ts_number = normalize_ts_number(ts_number_str)
                     gbdf_grs_ts_models.append(ts_number)
                     print(f"[INFO] Detected GBDTS{ts_number_str} for GBDF GRS processing (maps to TS{ts_number})")
+
+    if args.gbdf_mmp:
+        for arg in unknown_args:
+            if arg.startswith('--GBDTS') and len(arg) > 7:
+                ts_number_str = arg[7:]
+                if ts_number_str.isdigit():
+                    ts_number = normalize_ts_number(ts_number_str)
+                    gbdf_mmp_ts_models.append(ts_number)
+                    print(f"[INFO] Detected GBDTS{ts_number_str} for GBDF MMP processing (maps to TS{ts_number})")
     
     # Store GBDF TS models for later processing
     args.gbdf_mcr_ts_models = gbdf_mcr_ts_models
     args.gbdf_grs_ts_models = gbdf_grs_ts_models
+    args.gbdf_mmp_ts_models = gbdf_mmp_ts_models
     
     # STAGE 4.2: MODEL CONFIGURATION LOADING
     # ======================================
     # Load model configurations with dynamic discovery
     try:
         from models_config import get_models_config, get_model_by_ts, STATIC_MODELS_CONFIG
-        models_config = get_models_config(use_dynamic=True, use_wgs_csbd_destination=args.wgs_csbd, use_gbd_mcr=args.gbdf_mcr, use_gbd_grs=args.gbdf_grs, use_wgs_nyk=args.wgs_nyk)
+        models_config = get_models_config(use_dynamic=True, use_wgs_csbd_destination=args.wgs_csbd, use_gbd_mcr=args.gbdf_mcr, use_gbd_grs=args.gbdf_grs, use_gbd_mmp=args.gbdf_mmp, use_wgs_nyk=args.wgs_nyk)
         print("Configuration loaded with dynamic discovery")
         # When GBDF is requested and discovery returns 0 models, fall back to STATIC_MODELS_CONFIG
-        if not models_config and (args.gbdf_mcr or args.gbdf_grs):
+        if not models_config and (args.gbdf_mcr or args.gbdf_grs or args.gbdf_mmp):
             if args.gbdf_mcr:
                 models_config = STATIC_MODELS_CONFIG.get("gbdf_mcr", [])
                 if models_config:
@@ -459,6 +477,10 @@ Examples:
                 models_config = STATIC_MODELS_CONFIG.get("gbdf_grs", [])
                 if models_config:
                     print(f"Using STATIC_MODELS_CONFIG for GBDF GRS ({len(models_config)} models)")
+            elif args.gbdf_mmp:
+                models_config = STATIC_MODELS_CONFIG.get("gbdf_mmp", [])
+                if models_config:
+                    print(f"Using STATIC_MODELS_CONFIG for GBDF MMP ({len(models_config)} models)")
     except ImportError as e:
         print(f"Error: {e}")
         print("Please ensure models_config.py and dynamic_models.py exist.")
@@ -646,6 +668,24 @@ Examples:
                 print(f"ERROR Error: GBDF GRS TS{ts_number_str} model not found!")
                 print(f"Available models: {[m.get('ts_number') for m in models_config]}")
                 # Continue processing other models instead of exiting
+
+    # STAGE 4.5.2B: GBDTS MODEL HANDLING FOR MMP
+    if hasattr(args, 'gbdf_mmp_ts_models') and args.gbdf_mmp_ts_models:
+        if not args.gbdf_mmp:
+            print("ERROR Error: --gbdf_mmp flag is required for GBDTS MMP model processing!")
+            print("\nPlease use the --gbdf_mmp flag with GBDTS model commands:")
+            for ts_num in args.gbdf_mmp_ts_models:
+                print(f"  python main_processor.py --gbdf_mmp --GBDTS{ts_num}   # Process GBDF MMP TS{ts_num} model")
+            sys.exit(1)
+        for ts_number_str in args.gbdf_mmp_ts_models:
+            gbdf_ts_models = [model for model in models_config if model.get("ts_number") == ts_number_str]
+            if gbdf_ts_models:
+                models_to_process.extend(gbdf_ts_models)
+                folder_types = [m.get("folder_type", "regression") for m in gbdf_ts_models]
+                print(f"[INFO] Added {len(gbdf_ts_models)} GBDF MMP TS{ts_number_str} model(s) to processing queue: {', '.join(folder_types)}")
+            else:
+                print(f"ERROR Error: GBDF MMP TS{ts_number_str} model not found!")
+                print(f"Available models: {[m.get('ts_number') for m in models_config]}")
     
     if args.all:
         models_to_process = models_config
@@ -657,13 +697,14 @@ Examples:
     # GBDF GRS models now use --GBDTSXX format
     all_models = args.all
     
-    if all_models and not args.wgs_csbd and not args.wgs_nyk and not args.gbdf_mcr and not args.gbdf_grs:
-        print("ERROR Error: Either --wgs_csbd, --wgs_nyk, --gbdf_mcr, or --gbdf_grs flag is required for --all processing!")
+    if all_models and not args.wgs_csbd and not args.wgs_nyk and not args.gbdf_mcr and not args.gbdf_grs and not args.gbdf_mmp:
+        print("ERROR Error: Either --wgs_csbd, --wgs_nyk, --gbdf_mcr, --gbdf_grs, or --gbdf_mmp flag is required for --all processing!")
         print("\nPlease specify which type of models to process:")
         print("  python main_processor.py --wgs_csbd --all     # Process all WGS_CSBD models")
         print("  python main_processor.py --wgs_nyk --all     # Process all WGS_NYK models")
         print("  python main_processor.py --gbdf_mcr --all     # Process all GBDF MCR models")
         print("  python main_processor.py --gbdf_grs --all     # Process all GBDF GRS models")
+        print("  python main_processor.py --gbdf_mmp --all     # Process all GBDF MMP models")
         print("\nUse --help for more information.")
         sys.exit(1)
     
@@ -708,9 +749,13 @@ Examples:
         print("  --gbdf_grs --GBDTS141   Process TS141 model (NDC UOM Validation Edit Expansion Iprep-138 GBDF GRS) - Required format")
         print("  --gbdf_grs --GBDTS145   Process TS145 model (Nebulizer A52466 IPERP-132 GBDF GRS) - Required format")
         print("  --gbdf_grs --GBDTS147   Process TS147 model (No match of Procedure code GBDF GRS) - Required format")
+        print("  --gbdf_mmp --GBDTS65    Process TS65 model (Ambulance Mileage GBDF MMP) - Required format")
+        print("  --gbdf_mmp --GBDTS66    Process TS66 model (Inaccurate laterality GBDF MMP) - Required format")
         print("  --wgs_csbd --all     Process all discovered WGS_CSBD models")
         print("  --wgs_nyk --all     Process all discovered WGS_NYK models")
         print("  --gbdf_mcr --all     Process all discovered GBDF MCR models")
+        print("  --gbdf_grs --all     Process all discovered GBDF GRS models")
+        print("  --gbdf_mmp --all     Process all discovered GBDF MMP models")
         print("  --list    List all available TS models")
         print("\nUse --help for more information.")
         sys.exit(1)
@@ -728,6 +773,8 @@ Examples:
         model_type = "GBDF_MCR"
     elif args.gbdf_grs:
         model_type = "GBDF_GRS"
+    elif args.gbdf_mmp:
+        model_type = "GBDF_MMP"
 
     # Postman: controlled only by .env per-collection flag (true/false)
     postman_enabled_for_type = True
@@ -739,10 +786,12 @@ Examples:
         postman_enabled_for_type = POSTMAN_ENABLED_GBDF_MCR
     elif model_type == "GBDF_GRS":
         postman_enabled_for_type = POSTMAN_ENABLED_GBDF_GRS
+    elif model_type == "GBDF_MMP":
+        postman_enabled_for_type = POSTMAN_ENABLED_GBDF_MMP
     generate_postman = postman_enabled_for_type
     if not postman_enabled_for_type and model_type:
         env_key = {"WGS_CSBD": "ENABLE_POSTMAN_WGS_CSBD", "WGS_NYK": "ENABLE_POSTMAN_WGS_KERNAL",
-                   "GBDF_MCR": "ENABLE_POSTMAN_GBDF_MCR", "GBDF_GRS": "ENABLE_POSTMAN_GBDF_GRS"}.get(model_type)
+                   "GBDF_MCR": "ENABLE_POSTMAN_GBDF_MCR", "GBDF_GRS": "ENABLE_POSTMAN_GBDF_GRS", "GBDF_MMP": "ENABLE_POSTMAN_GBDF_MMP"}.get(model_type)
         print(f"[INFO] Postman generation is DISABLED for {model_type} (from .env: {env_key}=false)")
 
     # Check if report generation is disabled via command line or .env file
@@ -790,7 +839,8 @@ Examples:
                 generate_postman=generate_postman,
                 postman_collection_name=postman_collection_name,
                 postman_file_name=model_config.get('postman_file_name'),
-                excel_reporter=excel_reporter
+                excel_reporter=excel_reporter,
+                ts_number=model_config.get('ts_number'),
             )
             
             # Apply refdb value replacement if --refdb flag is set
@@ -807,6 +857,8 @@ Examples:
                         refdb_model = "gbdf_mcr"
                     elif model_type == "GBDF_GRS":
                         refdb_model = "gbdf_grs"
+                    elif model_type == "GBDF_MMP":
+                        refdb_model = "gbdf_mmp"
                     
                     if refdb_model and not is_refdb_model_enabled(refdb_model):
                         print(f"INFO Refdb is disabled for {refdb_model} (check ENABLE_REFDB_* in .env). Skipping refdb replacement.")
@@ -832,7 +884,7 @@ Examples:
                             print(f"WARNING Refdb: Destination directory not found: {dest_dir}")
                     else:
                         print(f"WARNING Refdb: Model type '{model_type}' is not a refdb-supported model")
-                        print(f"   Supported refdb models: WGS_CSBD (CSBDTS_46, CSBDTS_47, CSBDTS_59, CSBDTS_75), WGS_NYK (NYKTS_123, NYKTS_149), GBDF_MCR (GBDTS_XX), GBDF_GRS (GBDTS_XX)")
+                        print(f"   Supported refdb models: WGS_CSBD (CSBDTS_46, CSBDTS_47, CSBDTS_59, CSBDTS_75), WGS_NYK (NYKTS_123, NYKTS_149), GBDF_MCR (GBDTS_XX), GBDF_GRS (GBDTS_XX), GBDF_MMP (GBDTS_XX)")
                 except Exception as refdb_error:
                     print(f"WARNING Refdb processing failed: {refdb_error}")
                     # Continue with normal processing even if refdb fails

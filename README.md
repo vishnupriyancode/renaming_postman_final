@@ -6,7 +6,7 @@ A Python script for automatically renaming and organizing test case JSON files b
 
 ## 👤 For Users
 
-**What this does:** Renames test-case JSON files and (optionally) generates Postman collections for API testing. Supports WGS_CSBD, WGS_NYK, GBDF MCR, and GBDF GRS model types.
+**What this does:** Renames test-case JSON files and (optionally) generates Postman collections for API testing. Supports WGS_CSBD, WGS_NYK, GBDF MCR, GBDF GRS, and GBDF MMP model types.
 
 **Quick start:**
 1. **Install:** `pip install -r requirements.txt`
@@ -51,7 +51,7 @@ For full command reference, see [Quick Start Commands](#-quick-start-commands-ve
 - [Example Output](#example-output)
 - [File Structure](#file-structure)
 - [Excel Reporting System](#excel-reporting-system)
-- [KEY_CHK_DCN_NBR Generator](#key_chk_dcn_nbr-generator)
+- [KEY_CHK_DCN_NBR and CLCL_ID Generator](#key_chk_dcn_nbr-and-clcl_id-generator)
 - [How the Mapping Works](#how-the-mapping-works)
 - [Customization](#customization)
 - [Error Handling](#error-handling)
@@ -65,7 +65,27 @@ For full command reference, see [Quick Start Commands](#-quick-start-commands-ve
 
 ## 🔧 Recent Updates & Fixes
 
-**✅ CSBDTS59 RefDB Support & Windows Encoding Fix (Latest Update)**
+**✅ GBDF MMP Model Support (Latest Update)**
+
+The project now supports GBDF MMP (Timber/GetRecommendations) models end-to-end:
+
+- **✅ MMP CLI & discovery:** Use `--gbdf_mmp --GBDTS65`, `--gbdf_mmp --GBDTS66`, or `--gbdf_mmp --all`; `--gbdf_mmp --list` to see discoverable MMP models.
+- **✅ Excel integration:** MMP can be added from Excel via sheet **GBDF_MMP** or by having "mmp" in the edit string on GBDF/GBDF_MCR sheets; generated command uses `--gbdf_mmp`.
+- **✅ Smoke collections:** Regression and smoke payloads are both renamed and discovered for MMP; static config is expanded so smoke is included when the smoke folder exists.
+- **✅ Postman for MMP:** Collections use the **GetRecommendations** URL: `https://.../claims/Timber/GetRecommendations` (default baseUrl in collection variables). Regression and smoke collection files are stored in the same folder.
+- **✅ GBD collection folder:** Postman collections for GBD models (MCR, GRS, MMP) are stored under a **ts_id_model** folder (e.g. `TS66_RULE00000022_inaccurate_laterality`) with both regression and smoke JSON in that folder.
+- **✅ KEY_CHK_DCN_NBR and CLCL_ID for MMP:** For GBDF/MMP (and all GBDTS) JSON files, both fields are generated as 7 random digits + `"TEST"` (11 characters, last 4 = TEST) at root and payload where present.
+
+**Examples:**
+```bash
+# MMP models (use --gbdf_mmp and --GBDTS<NN>)
+python main_processor.py --gbdf_mmp --GBDTS65    # Ambulance Mileage without Base Transport Paid IPREP 192
+python main_processor.py --gbdf_mmp --GBDTS66    # Inaccurate laterality edit GBD facets MMP
+python main_processor.py --gbdf_mmp --all        # All discovered MMP models
+python main_processor.py --gbdf_mmp --list      # List discoverable MMP models
+```
+
+**✅ CSBDTS59 RefDB Support & Windows Encoding Fix**
 
 The project has been enhanced with refdb support for CSBDTS59 and Windows encoding improvements:
 
@@ -439,7 +459,7 @@ These flags control *how* the script runs. They can be combined with any model c
 | Command | Description |
 |--------|-------------|
 | `--list` | List all available TS models for the given model type; with a specific model (e.g. `--CSBDTS01`) generates JSON renaming timing report for that model |
-| `--all` | Process all discovered models for the selected model type (requires `--wgs_csbd`, `--wgs_nyk`, `--gbdf_mcr`, or `--gbdf_grs`) |
+| `--all` | Process all discovered models for the selected model type (requires `--wgs_csbd`, `--wgs_nyk`, `--gbdf_mcr`, `--gbdf_grs`, or `--gbdf_mmp`) |
 | `--no-postman` | Skip Postman collection generation; only rename files |
 | `--no-report` | Disable Excel report generation (skip timing reports) |
 | `--refdb` | Apply refdb value replacement for refdb-supported models (e.g. CSBDTS46, CSBDTS47, CSBDTS59, NYKTS123) |
@@ -455,6 +475,7 @@ These flags control *how* the script runs. They can be combined with any model c
 python main_processor.py --wgs_csbd --CSBDTS01 --list      # Timing report for TS01
 python main_processor.py --wgs_csbd --CSBDTS07 --no-postman
 python main_processor.py --gbdf_mcr --GBDTS47 --no-postman
+python main_processor.py --gbdf_mmp --GBDTS66 --no-postman # MMP without Postman
 python main_processor.py --wgs_csbd --all --refdb
 python main_processor.py --wgs_csbd --all --no-postman
 ```
@@ -469,6 +490,7 @@ You must choose **one** model type and **one** model (or `--all`). Model type an
 | `--wgs_nyk` | `--NYKTS<NN>` or `--all` | `--wgs_nyk --NYKTS124`, `--wgs_nyk --all` |
 | `--gbdf_mcr` | `--GBDTS<NN>` or `--all` | `--gbdf_mcr --GBDTS47`, `--gbdf_mcr --all` |
 | `--gbdf_grs` | `--GBDTS<NN>` or `--all` | `--gbdf_grs --GBDTS49`, `--gbdf_grs --all` |
+| `--gbdf_mmp` | `--GBDTS<NN>` or `--all` | `--gbdf_mmp --GBDTS66`, `--gbdf_mmp --all` |
 
 **Rules:**
 
@@ -476,6 +498,7 @@ You must choose **one** model type and **one** model (or `--all`). Model type an
 - **WGS_NYK:** Use `--wgs_nyk` with `--NYKTS122`, `--NYKTS123`, … (e.g. `--NYKTS130`, `--NYKTS132`, `--NYKTS149`, `--NYKTS150`).
 - **GBDF MCR:** Use `--gbdf_mcr` with `--GBDTS47`, `--GBDTS62`, … (e.g. `--GBDTS138`, `--GBDTS144`).
 - **GBDF GRS:** Use `--gbdf_grs` with `--GBDTS49`, `--GBDTS61`, … (e.g. `--GBDTS139`, `--GBDTS141`).
+- **GBDF MMP:** Use `--gbdf_mmp` with `--GBDTS65`, `--GBDTS66`, … (e.g. `--gbdf_mmp --all`).
 
 **Examples (model commands only):**
 ```bash
@@ -484,12 +507,14 @@ python main_processor.py --wgs_csbd --CSBDTS01
 python main_processor.py --wgs_nyk --NYKTS124
 python main_processor.py --gbdf_mcr --GBDTS47
 python main_processor.py --gbdf_grs --GBDTS49
+python main_processor.py --gbdf_mmp --GBDTS66
 
 # All models of a type
 python main_processor.py --wgs_csbd --all
 python main_processor.py --wgs_nyk --all
 python main_processor.py --gbdf_mcr --all
 python main_processor.py --gbdf_grs --all
+python main_processor.py --gbdf_mmp --all
 ```
 
 ### GBDF_MCR Models (Global Burden of Disease Foundation - Medical Claims Research)
@@ -530,6 +555,20 @@ python main_processor.py --gbdf_grs --GBDTS147   # TS147 No match of Procedure c
 python main_processor.py --gbdf_grs --all
 ```
 
+### GBDF_MMP Models (GBDF MMP – Timber GetRecommendations)
+
+**Format:** `python main_processor.py --gbdf_mmp --GBDTS<NN>`. Use `python main_processor.py --gbdf_mmp --list` to see models discoverable from `source_folder/GBDF` (MMP folders only). Postman collections use the GetRecommendations URL; collections are stored under a **ts_id_model** folder (e.g. `TS66_RULE00000022_inaccurate_laterality`) with both regression and smoke JSON in that folder. KEY_CHK_DCN_NBR and CLCL_ID are generated (7 digits + "TEST") for MMP output.
+
+```bash
+# Process specific GBDF MMP models (--gbdf_mmp and --GBDTS<NN> required)
+python main_processor.py --gbdf_mmp --GBDTS65    # TS65 Ambulance Mileage without Base Transport Paid IPREP 192
+python main_processor.py --gbdf_mmp --GBDTS66    # TS66 Inaccurate laterality edit GBD facets MMP - edit ID: RULE00000022
+python main_processor.py --gbdf_mmp --GBDTS73    # TS73 (use --list for full list)
+
+# Process all discovered GBDF MMP models
+python main_processor.py --gbdf_mmp --all
+```
+
 ### WGS_NYK / WGS_KERNAL Models (Working Group Standards - New York Kernal)
 
 **Format:** `python main_processor.py --wgs_nyk --NYKTS<NN>`. Models are discovered from `source_folder/WGS_Kernal`. Use `python main_processor.py --wgs_nyk --list` to see available models. **RefDB support:** use `--refdb` with NYKTS123 (and NYKTS149 when configured).
@@ -563,11 +602,13 @@ python auto_edit_processor.py --sheet WGS_CSBD
 python auto_edit_processor.py --sheet GBDF
 python auto_edit_processor.py --sheet GBDF_MCR
 python auto_edit_processor.py --sheet GBDF_GRS
+python auto_edit_processor.py --sheet GBDF_MMP
 python auto_edit_processor.py --sheet KERNAL
 
 # Sync Test Suite IDs from Excel to models_config.py
 python auto_edit_processor.py --sync-from-excel --sheet WGS_CSBD
 python auto_edit_processor.py --sync-from-excel --sheet GBDF
+python auto_edit_processor.py --sync-from-excel --sheet GBDF_MMP
 python auto_edit_processor.py --sync-from-excel --sheet KERNAL
 
 # Sort STATIC_MODELS_CONFIG by ts_number (ascending)
@@ -585,6 +626,7 @@ python auto_edit_processor.py --dry-run
 | **WGS_CSBD** | 25 | TS01, TS46–TS57, TS59 (use `--wgs_csbd --list`) | Healthcare Claims Processing; static config TS01–TS73 |
 | **GBDF_MCR** | 18 | TS01, TS48, TS60, TS61, TS70, TS138, TS140, TS144, TS146 (use `--gbdf_mcr --list`) | Global Burden of Disease Foundation - Medical Claims Research |
 | **GBDF_GRS** | 14 | TS49, TS59, TS62, TS139, TS141, TS145, TS147 (use `--gbdf_grs --list`) | Global Burden of Disease Foundation - Global Research Services |
+| **GBDF_MMP** | — | TS65, TS66, TS73, … (use `--gbdf_mmp --list`) | GBDF MMP (Timber GetRecommendations); Excel sheet GBDF_MMP or "mmp" in edit string |
 | **WGS_NYK** (WGS_KERNAL) | 22 | TS122–TS130, TS132, TS151 (use `--wgs_nyk --list`) | Working Group Standards - New York Kernal (Observation Services, Revenue code to HCPCS) |
 
 ### Quick Command Reference
@@ -593,12 +635,14 @@ python auto_edit_processor.py --dry-run
 python main_processor.py --wgs_csbd --all     # All discovered WGS_CSBD models
 python main_processor.py --gbdf_mcr --all     # All discovered GBDF MCR models
 python main_processor.py --gbdf_grs --all     # All discovered GBDF GRS models
+python main_processor.py --gbdf_mmp --all     # All discovered GBDF MMP models
 python main_processor.py --wgs_nyk --all      # All discovered WGS_NYK (WGS_KERNAL) models
 
 # Process WITHOUT Postman generation
 python main_processor.py --wgs_csbd --all --no-postman
 python main_processor.py --gbdf_mcr --all --no-postman
 python main_processor.py --gbdf_grs --all --no-postman
+python main_processor.py --gbdf_mmp --all --no-postman
 python main_processor.py --wgs_nyk --all --no-postman
 
 # RefDB value replacement (WGS_CSBD: CSBDTS46, CSBDTS47, CSBDTS59, CSBDTS75; WGS_NYK: NYKTS123, NYKTS149)
@@ -609,6 +653,7 @@ python main_processor.py --wgs_nyk --all --refdb
 python main_processor.py --wgs_csbd --list
 python main_processor.py --gbdf_mcr --list
 python main_processor.py --gbdf_grs --list
+python main_processor.py --gbdf_mmp --list
 python main_processor.py --wgs_nyk --list
 
 # Help
@@ -668,6 +713,11 @@ python main_processor.py --gbdf_grs --TS141   # Generates TS_141_NDC UOM Validat
 python main_processor.py --gbdf_grs --TS145   # Generates TS_145_Nebulizer A52466 IPERP-132_gbdf_grs_Collection - edit ID: RULENEBU000001
 python main_processor.py --gbdf_grs --TS147   # Generates TS_147_No match of Procedure code_gbdf_grs_Collection - edit ID: RULENMP000001
 python main_processor.py --gbdf_grs --all     # Generates collections for all GBDF GRS models
+
+# GBDF MMP models with Postman collection generation (GetRecommendations URL; collections under ts_id_model folder)
+python main_processor.py --gbdf_mmp --GBDTS65    # Ambulance Mileage MMP - edit ID: RULEAMBU000001
+python main_processor.py --gbdf_mmp --GBDTS66    # Inaccurate laterality MMP - edit ID: RULE00000022
+python main_processor.py --gbdf_mmp --all     # Generates collections for all GBDF MMP models
 
 # WGS_NYK models with Postman collection generation (Must use --NYKTSXX format)
 python main_processor.py --wgs_nyk --NYKTS122   # Generates NYKTS_122_Revenue code to HCPCS Alignment edit_Collection - edit ID: RULERCTH00001
@@ -1496,11 +1546,13 @@ python auto_edit_processor.py --sheet WGS_CSBD
 python auto_edit_processor.py --sheet GBDF
 python auto_edit_processor.py --sheet GBDF_MCR
 python auto_edit_processor.py --sheet GBDF_GRS
+python auto_edit_processor.py --sheet GBDF_MMP
 python auto_edit_processor.py --sheet KERNAL
 
 # Sync Test Suite IDs from Excel to models_config.py (sync-only mode)
 python auto_edit_processor.py --sync-from-excel --sheet WGS_CSBD
 python auto_edit_processor.py --sync-from-excel --sheet GBDF
+python auto_edit_processor.py --sync-from-excel --sheet GBDF_MMP
 python auto_edit_processor.py --sync-from-excel --sheet KERNAL
 
 # Sort STATIC_MODELS_CONFIG by ts_number (ascending) for all models
@@ -1516,7 +1568,7 @@ python auto_edit_processor.py --dry-run
 #### Command Options
 
 - `--sheet SHEET_NAME`: Excel sheet name to process (default: `WGS_CSBD`)
-  - Options: `WGS_CSBD`, `GBDF`, `GBDF_MCR`, `GBDF_GRS`, `KERNAL`
+  - Options: `WGS_CSBD`, `GBDF`, `GBDF_MCR`, `GBDF_GRS`, `GBDF_MMP`, `KERNAL`
 - `--excel EXCEL_PATH`: Path to Excel file (default: `edits_list.xlsx`)
 - `--dry-run`: Preview changes without updating files
 - `--sync-from-excel`: Sync STATIC_MODELS_CONFIG from Excel Test Suite IDs (updates models_config.py only)
@@ -1937,23 +1989,28 @@ python main_processor.py --gbdf_grs --TS139 --list   # Generate timing report fo
 - Success/failure status for each file
 - Timestamped Excel reports with model-specific naming
 
-## KEY_CHK_DCN_NBR Generator
+## KEY_CHK_DCN_NBR and CLCL_ID Generator
 
-The project includes an automatic KEY_CHK_DCN_NBR generator that creates random 11-digit numbers for test case validation:
+The project includes automatic generators for **KEY_CHK_DCN_NBR** and **CLCL_ID** for test case validation.
 
-### Generator Features:
-- **Random Number Generation**: Creates 11-digit numbers between 10000000000 and 99999999999
-- **Dual-Level Updates**: Updates KEY_CHK_DCN_NBR fields at both root level and payload level
-- **Smart Detection**: Automatically detects existing KEY_CHK_DCN_NBR fields and updates them
-- **WGS_CSBD Integration**: Works seamlessly with WGS_CSBD header/footer transformation
+### WGS_CSBD (KEY_CHK_DCN_NBR)
+- **Random Number Generation**: Creates 11-digit numbers for KEY_CHK_DCN_NBR in WGS_CSBD header/footer flow
+- **Dual-Level Updates**: Updates KEY_CHK_DCN_NBR at both root level and payload level
+- **WGS_CSBD Integration**: Applied during WGS_CSBD header/footer transformation
 
-### How It Works:
-1. **Field Detection**: Scans JSON files for existing KEY_CHK_DCN_NBR fields
-2. **Number Generation**: Creates a new random 11-digit number for each field found
-3. **Field Updates**: Updates both root-level and payload-level KEY_CHK_DCN_NBR fields
-4. **Logging**: Provides detailed logging of all generated numbers
+### GBDF/MMP (KEY_CHK_DCN_NBR and CLCL_ID)
+- **Format**: 7 random digits + `"TEST"` (11 characters total; last 4 = TEST), e.g. `6905669TEST`
+- **KEY_CHK_DCN_NBR**: Set at root and payload when present (all GBDF/GBDTS output, including MMP)
+- **CLCL_ID**: Set at root, payload, and in `claim_header` paths when present
+- **Applied to**: Any destination under `GBDF` or `GBDTS` (MCR, GRS, and MMP models)
 
-### Example Output:
+### How It Works (GBDF/MMP):
+1. **Detection**: When renaming files to `renaming_jsons/GBDTS/...` or `.../GBDF/...`, the generator runs on each copied JSON
+2. **Generation**: Creates a new 7-digits + `"TEST"` value for KEY_CHK_DCN_NBR and for CLCL_ID
+3. **Updates**: Writes KEY_CHK_DCN_NBR at root and payload; CLCL_ID at root, payload, and claim_header locations
+4. **Logging**: Logs each generated value and path
+
+### Example Output (WGS_CSBD – 11-digit format):
 ```json
 {
   "KEY_CHK_DCN_NBR": "42488458762",
@@ -1964,11 +2021,24 @@ The project includes an automatic KEY_CHK_DCN_NBR generator that creates random 
 }
 ```
 
+### Example Output (GBDF/MMP – 7 digits + "TEST"):
+```json
+{
+  "KEY_CHK_DCN_NBR": "6905669TEST",
+  "CLCL_ID": "3847291TEST",
+  "payload": {
+    "KEY_CHK_DCN_NBR": "6905669TEST",
+    "CLCL_ID": "3847291TEST"
+  }
+}
+```
+
 ### Console Output:
 ```
 [INFO] Generated random 11-digit number for KEY_CHK_DCN_NBR (root level): 42488458762
 [INFO] Generated random 11-digit number for KEY_CHK_DCN_NBR (payload level): 85872060683
 ```
+(For GBDF/MMP: `[INFO] Generated KEY_CHK_DCN_NBR (...): 6905669TEST` and `[INFO] Generated CLCL_ID (...): 3847291TEST`)
 
 ## How the Mapping Works
 

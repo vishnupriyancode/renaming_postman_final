@@ -26,6 +26,10 @@ python main_processor.py --wgs_csbd --CSBDTS01 --no-postman
 
 # Batch generate for all models
 python main_processor.py --all
+
+# GBDF MMP (Timber GetRecommendations URL; collections under ts_id_model folder)
+python main_processor.py --gbdf_mmp --GBDTS66
+python main_processor.py --gbdf_mmp --all
 ```
 
 ### 2. Collection Structure
@@ -104,6 +108,7 @@ postman_collections/[Category]/
 - Random data generation for WGS_CSBD models
 - KEY_CHK_DCN_NBR generation (11-digit random)
 - Header/footer transformations
+- GBDF MMP: Postman uses Timber GetRecommendations URL; collections stored under ts_id_model folder
 
 ### 2. Batch Operations
 - Multi-collection generation

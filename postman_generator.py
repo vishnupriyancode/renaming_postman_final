@@ -15,6 +15,10 @@ META_TRANSID_WGS_CSBD = "20220117181853TMBL20359Cl893580999"
 META_TRANSID_WGS_KERNAL = "20240705012036TMBLMMY437A003580999CS90TIMBER01"
 META_SRC_ENVRMT = "IMSH"
 
+# MMP models use Timber GetRecommendations endpoint
+MMP_BASE_URL_DEFAULT = "https://pi-timber-claims-api-uat.ingress-nginx.dig-gld-shared.gcpdns.internal.das"
+MMP_PATH = "claims/Timber/GetRecommendations"
+
 
 class PostmanCollectionGenerator:
     """Generates Postman collections from JSON payload files in a source directory."""
@@ -63,10 +67,14 @@ class PostmanCollectionGenerator:
         custom_filename=None,
         is_gbdf_model=False,
         is_wgs_kernal=False,
+        is_gbdf_mmp=False,
+        gbdf_collection_folder=None,
     ):
         """
         Generate a single Postman collection from all JSON files in self.source_dir.
         Returns the path to the written collection file, or None on failure.
+        When is_gbdf_mmp is True, request URL uses claims/Timber/GetRecommendations.
+        When gbdf_collection_folder is set (e.g. TS66_RULE00000022_model_name), collection is stored under that folder for GBD models.
         """
         if not self.source_dir or not self.source_dir.exists():
             return None
@@ -81,6 +89,8 @@ class PostmanCollectionGenerator:
             output_filename=filename,
             is_gbdf_model=is_gbdf_model,
             is_wgs_kernal=is_wgs_kernal,
+            is_gbdf_mmp=is_gbdf_mmp,
+            gbdf_collection_folder=gbdf_collection_folder,
         )
 
     def _write_collection(
@@ -90,10 +100,26 @@ class PostmanCollectionGenerator:
         output_filename,
         is_gbdf_model=False,
         is_wgs_kernal=False,
+        is_gbdf_mmp=False,
+        gbdf_collection_folder=None,
     ):
-        """Build Postman collection dict and write to output_dir / collection_folder / output_filename."""
+        """Build Postman collection dict and write to output_dir / collection_folder / output_filename. For GBD models, collection_folder can be ts_id_model (e.g. TS66_RULE00000022_model_name)."""
         # Use output filename stem as collection display name so imported collection shows e.g. covid_wgs_csbd_RULEEM000001_W04_regression
         display_name = Path(output_filename).stem if output_filename else collection_name
+        # MMP models use Timber GetRecommendations endpoint
+        if is_gbdf_mmp:
+            url_raw = "{{baseUrl}}/claims/Timber/GetRecommendations"
+            url_path = ["claims", "Timber", "GetRecommendations"]
+            base_url_default = MMP_BASE_URL_DEFAULT
+            variables = [{"key": "baseUrl", "value": base_url_default, "type": "string"}]
+        else:
+            url_raw = "{{baseUrl}}/api/validate/{{tc_id}}"
+            url_path = ["api", "validate", "{{tc_id}}"]
+            base_url_default = "http://localhost:3000"
+            variables = [
+                {"key": "baseUrl", "value": base_url_default, "type": "string"},
+                {"key": "tc_id", "value": "", "type": "string"},
+            ]
         items = []
         for jpath in json_files:
             try:
@@ -108,9 +134,9 @@ class PostmanCollectionGenerator:
                 "method": "POST",
                 "header": headers,
                 "url": {
-                    "raw": "{{baseUrl}}/api/validate/{{tc_id}}",
+                    "raw": url_raw,
                     "host": ["{{baseUrl}}"],
-                    "path": ["api", "validate", "{{tc_id}}"],
+                    "path": url_path,
                 },
                 "body": {"mode": "raw", "raw": raw_body, "options": {"raw": {"language": "json"}}},
             }
@@ -123,10 +149,13 @@ class PostmanCollectionGenerator:
                 "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
             },
             "item": items,
-            "variable": [{"key": "baseUrl", "value": "http://localhost:3000", "type": "string"}, {"key": "tc_id", "value": "", "type": "string"}],
+            "variable": variables,
         }
 
-        collection_folder = re.sub(r"[^\w\-]", "_", display_name).strip("_")
+        if gbdf_collection_folder:
+            collection_folder = re.sub(r"[^\w\-]", "_", gbdf_collection_folder).strip("_")
+        else:
+            collection_folder = re.sub(r"[^\w\-]", "_", display_name).strip("_")
         out_dir = self.output_dir / collection_folder
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / output_filename

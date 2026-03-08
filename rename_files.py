@@ -68,10 +68,11 @@ def extract_model_info_from_directory(dest_dir: str, renamed_files: list) -> dic
                 (r'TS_(\d{1,3})_(.+?)_WGS_CSBD_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False)
             ]
         elif "GBDTS" in dest_dir or "GBDF" in dest_dir:
-            model_info["model_lob"] = "GBDF_MCR" if "mcr" in dest_dir.lower() else "GBDF_GRS" if "grs" in dest_dir.lower() else "GBDF"
+            model_info["model_lob"] = "GBDF_MCR" if "mcr" in dest_dir.lower() else "GBDF_GRS" if "grs" in dest_dir.lower() else "GBDF_MMP" if "mmp" in dest_dir.lower() else "GBDF"
             patterns = [
-                (r'TS_(\d{1,3})_(.+?)_gbdf_(mcr|grs)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
-                (r'GBDTS_(\d{1,3})_(.+?)_gbdf_(mcr|grs)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True)
+                (r'TS_(\d{1,3})_(.+?)_gbdf_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
+                (r'GBDTS_(\d{1,3})_(.+?)_gbdf_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
+                (r'GBDTS_(\d{1,3})_(.+?)_gbd_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
             ]
         elif "NYKTS" in dest_dir or "WGS_KERNAL" in dest_dir or "WGS_NYK" in dest_dir:
             model_info["model_lob"] = "WGS_NYK"
@@ -292,14 +293,14 @@ def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
 
 def apply_gbdf_clcl_id_generation(file_path):
     """
-    Generate value for CLCL_ID field in GBDF JSON files: 7 random digits + "TEST" (e.g. 6905669TEST).
-    Handles root-level, nested payload structure, and GBDF claim_header path.
+    Generate KEY_CHK_DCN_NBR and CLCL_ID for GBDF/MMP JSON files: 7 random digits + "TEST" (11 chars, last 4 TEST).
+    Applies to root and payload levels. Also handles claim_header path for CLCL_ID.
     
     Args:
         file_path: Path to the JSON file to transform
         
     Returns:
-        bool: True if transformation was successful, False otherwise
+        bool: True if at least one transformation was successful, False otherwise
     """
     import random
     
@@ -311,32 +312,50 @@ def apply_gbdf_clcl_id_generation(file_path):
             return True
         return False
     
+    def update_key_chk_dcn_nbr(data, path_name):
+        """Helper to update KEY_CHK_DCN_NBR at a given path."""
+        if isinstance(data, dict) and "KEY_CHK_DCN_NBR" in data:
+            data["KEY_CHK_DCN_NBR"] = key_chk_value
+            print(f"[INFO] Generated KEY_CHK_DCN_NBR ({path_name}): {key_chk_value}")
+            return True
+        return False
+    
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             existing_data = json.load(f)
         
+        # 11 chars: 7 random digits + "TEST" (last 4 digits as TEST)
         clcl_id_value = str(random.randint(1000000, 9999999)) + "TEST"
+        key_chk_value = str(random.randint(1000000, 9999999)) + "TEST"
         clcl_id_updated = False
+        key_chk_updated = False
         
-        # Check all possible paths for CLCL_ID
+        # KEY_CHK_DCN_NBR: root and payload level
+        for data, path_name in [
+            (existing_data, "root level"),
+            (existing_data.get("payload", {}) if isinstance(existing_data, dict) else {}, "payload level"),
+        ]:
+            if update_key_chk_dcn_nbr(data, path_name):
+                key_chk_updated = True
+        
+        # CLCL_ID: all possible paths
         paths_to_check = [
             (existing_data, "root level"),
             (existing_data.get("payload", {}) if isinstance(existing_data, dict) else {}, "payload level"),
             (existing_data.get("claim_header", [{}])[0] if isinstance(existing_data, dict) and isinstance(existing_data.get("claim_header"), list) and existing_data["claim_header"] else {}, "claim_header[0] level"),
             (existing_data.get("payload", {}).get("claim_header", [{}])[0] if isinstance(existing_data, dict) and isinstance(existing_data.get("payload"), dict) and isinstance(existing_data["payload"].get("claim_header"), list) and existing_data["payload"]["claim_header"] else {}, "payload.claim_header[0] level")
         ]
-        
         for data, path_name in paths_to_check:
             if update_clcl_id(data, path_name):
                 clcl_id_updated = True
         
-        if clcl_id_updated:
+        if clcl_id_updated or key_chk_updated:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(existing_data, f, indent=2, ensure_ascii=False)
-            print(f"[SUCCESS] Applied CLCL_ID generation to: {file_path}")
+            print(f"[SUCCESS] Applied KEY_CHK_DCN_NBR/CLCL_ID generation to: {file_path}")
             return True
         else:
-            print(f"[WARNING] CLCL_ID field not found in {file_path}, skipping transformation")
+            print(f"[WARNING] No CLCL_ID or KEY_CHK_DCN_NBR field found in {file_path}, skipping transformation")
             return False
         
     except json.JSONDecodeError as e:
@@ -369,7 +388,7 @@ def validate_suffix(suffix, filename):
     return True
 
 
-def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, generate_postman=True, postman_collection_name=None, postman_file_name=None, excel_reporter=None):
+def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, generate_postman=True, postman_collection_name=None, postman_file_name=None, excel_reporter=None, ts_number=None):
     """
     STAGE 1: FILE RENAMING FUNCTION
     ===============================
@@ -393,6 +412,7 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
         postman_collection_name: Name for the Postman collection
         postman_file_name: Custom filename for the Postman collection JSON file
         excel_reporter: Excel reporter instance for timing tracking
+        ts_number: TS number (e.g. "66"); for GBDF models, used to build collection folder as TS{ts_number}_{edit_id}_{model_name}
         
     Returns:
         list: List of renamed file names
@@ -515,13 +535,13 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                     else:
                         print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
                 
-                # Apply CLCL_ID generation for GBDF files
-                elif "GBDF" in dest_dir:
-                    print(f"Applying GBDF CLCL_ID generation to: {new_filename}")
+                # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
+                elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
+                    print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
                     if apply_gbdf_clcl_id_generation(dest_path):
-                        print(f"[SUCCESS] CLCL_ID generation applied to: {new_filename}")
+                        print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
                     else:
-                        print(f"[WARNING] Failed to apply CLCL_ID generation to: {new_filename}")
+                        print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
                 
                 # Remove the original file
                 os.remove(source_path)
@@ -531,7 +551,7 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                 
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
-                
+        
         elif len(parts) == 4:
             # STAGE 1.4.1B: 4-PART TEMPLATE PROCESSING
             # ========================================
@@ -580,13 +600,13 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                     else:
                         print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
                 
-                # Apply CLCL_ID generation for GBDF files
-                elif "GBDF" in dest_dir:
-                    print(f"Applying GBDF CLCL_ID generation to: {new_filename}")
+                # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
+                elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
+                    print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
                     if apply_gbdf_clcl_id_generation(dest_path):
-                        print(f"[SUCCESS] CLCL_ID generation applied to: {new_filename}")
+                        print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
                     else:
-                        print(f"[WARNING] Failed to apply CLCL_ID generation to: {new_filename}")
+                        print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
                 
                 # Remove the original file
                 os.remove(source_path)
@@ -596,7 +616,7 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                 
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
-                
+        
         elif len(parts) == 5:
             # STAGE 1.4.1C: 5-PART TEMPLATE PROCESSING
             # ========================================
@@ -658,13 +678,13 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                         else:
                             print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
                     
-                    # Apply CLCL_ID generation for GBDF files
-                    elif "GBDF" in dest_dir:
-                        print(f"Applying GBDF CLCL_ID generation to: {new_filename}")
+                    # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
+                    elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
+                        print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
                         if apply_gbdf_clcl_id_generation(dest_path):
-                            print(f"[SUCCESS] CLCL_ID generation applied to: {new_filename}")
+                            print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
                         else:
-                            print(f"[WARNING] Failed to apply CLCL_ID generation to: {new_filename}")
+                            print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
                     
                     # Remove the original file
                     os.remove(source_path)
@@ -752,12 +772,29 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
             
             # STAGE 2.3: COLLECTION GENERATION
             # ===============================
-            # Determine model type for Postman HEADERS (meta-transid)
-            is_gbdf_model = "GBDF" in dest_dir
+            # Determine model type for Postman HEADERS (meta-transid) and URL (MMP uses GetRecommendations)
+            is_gbdf_model = "GBDF" in dest_dir or "GBDTS" in dest_dir
             is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir
+            is_gbdf_mmp = is_gbdf_model and "mmp" in dest_dir.lower()
+            # For GBDF models: store collection in folder named ts_id_model (e.g. TS66_RULE00000022_inaccurate_laterality).
+            # Use short model name (before _edit_ / _gbd_facets_ / _gbd_) so regression and smoke both go under the same folder.
+            gbdf_collection_folder = None
+            if is_gbdf_model and ts_number:
+                base = re.sub(r"_(regression|smoke)$", "", collection_display_name)
+                model_slug = base.replace(f"_{edit_id}_{code}", "").strip("_") or base
+                model_slug = re.sub(r"[^\w\-]", "_", model_slug).strip("_")
+                # Shorten to part before _edit_, _gbd_facets_, or _gbd_ (e.g. inaccurate_laterality_edit_gbd_facets_mmp -> inaccurate_laterality)
+                for sep in ("_edit_", "_gbd_facets_", "_gbd_"):
+                    if sep in model_slug:
+                        model_slug = model_slug.split(sep)[0]
+                        break
+                gbdf_collection_folder = f"TS{ts_number}_{edit_id}_{model_slug}"
             
-            # Generate collection (wgs_kernal vs wgs_csbd sets meta-transid in HEADERS)
-            collection_path = generator.generate_postman_collection(collection_display_name, custom_filename, is_gbdf_model, is_wgs_kernal)
+            # Generate collection (wgs_kernal vs wgs_csbd sets meta-transid; MMP uses claims/Timber/GetRecommendations URL; GBDF uses ts_id_model folder)
+            collection_path = generator.generate_postman_collection(
+                collection_display_name, custom_filename, is_gbdf_model, is_wgs_kernal, is_gbdf_mmp,
+                gbdf_collection_folder=gbdf_collection_folder
+            )
             
             if collection_path:
                 print(f"Postman collection generated: {collection_path}")

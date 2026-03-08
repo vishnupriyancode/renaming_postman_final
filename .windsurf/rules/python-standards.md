@@ -28,6 +28,6 @@ trigger: model_decision
 - Use existing `TimingTracker` and report generators for timing; keep console output actionable for debugging.
 
 ## Naming and Conventions
-- Model identifiers: WGS_CSBD (CSBDTS), WGS_NYK (NYKTS), GBDF MCR/GRS (GBDTS/TS). Use exact prefixes (NYKTS not TS for NYK).
+- Model identifiers: WGS_CSBD (CSBDTS), WGS_NYK (NYKTS), GBDF MCR/GRS/MMP (GBDTS). Use exact prefixes (NYKTS not TS for NYK).
 - Normalize TS numbers via `dynamic_models.normalize_ts_number()`; paths must include `/payloads/` (smoke or regression).
 - Do not change suffix mapping: deny→LR, bypass→NR, exclusion→EX without updating postman_generator and docs.

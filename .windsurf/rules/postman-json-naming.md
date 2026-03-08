@@ -25,7 +25,7 @@ trigger: model_decision
 - Do not manually change EditID or Code segments in filenames; they come from `models_config` / discovery.
 
 ## WGS_CSBD-Only Behavior
-- Header/footer transformation and random 11-digit `KEY_CHK_DCN_NBR` (root and payload) apply only to WGS_CSBD. Do not add to GBDF or WGS_NYK payloads.
+- Header/footer transformation and random 11-digit `KEY_CHK_DCN_NBR` (root and payload) apply only to WGS_CSBD. Do not add to GBDF (MCR, GRS, MMP) or WGS_NYK payloads.
 
 ## Editing JSON Payloads
 - Preserve structure expected by postman_generator (e.g. request body from renamed JSON).

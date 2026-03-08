@@ -9,7 +9,7 @@ description: Add and configure new healthcare models in the test-case automation
 Guide the process of adding new healthcare models to the automation system, including configuration setup, testing, and deployment.
 
 ## When to Use
-- Adding new WGS_CSBD, WGS_NYK, GBDF MCR, or GBDF GRS models
+- Adding new WGS_CSBD, WGS_NYK, GBDF MCR, GBDF GRS, or GBDF MMP models
 - Updating existing model configurations
 - Troubleshooting model discovery issues
 - Setting up model-specific behaviors
@@ -31,7 +31,10 @@ Guide the process of adding new healthcare models to the automation system, incl
 **Command Format:** `--gbdf_mcr --GBDTS[XX]`
 
 ### 4. GBDF GRS Models
-**Command Format:** `--gbdf_grs --TS[XX]`
+**Command Format:** `--gbdf_grs --GBDTS[XX]`
+
+### 5. GBDF MMP Models
+**Command Format:** `--gbdf_mmp --GBDTS[XX]` (e.g. GBDTS65, GBDTS66). Postman collections use Timber GetRecommendations URL.
 
 ## Adding New Models
 
@@ -207,6 +210,7 @@ python main_processor.py --list
 
 # Test specific model
 python main_processor.py --wgs_csbd --CSBDTS01
+python main_processor.py --gbdf_mmp --GBDTS66
 
 # Batch process all models
 python main_processor.py --all

@@ -21,7 +21,8 @@ Verify the correct command format is being used:
 - WGS_CSBD: `--wgs_csbd --CSBDTS[XX]`
 - WGS_NYK: `--wgs_nyk --NYKTS[XXX]` (must use NYKTS prefix)
 - GBDF MCR: `--gbdf_mcr --GBDTS[XX]`
-- GBDF GRS: `--gbdf_grs --TS[XX]`
+- GBDF GRS: `--gbdf_grs --GBDTS[XX]`
+- GBDF MMP: `--gbdf_mmp --GBDTS[XX]`
 
 ### 2. Verify Source Paths
 Check that source paths follow the pattern:

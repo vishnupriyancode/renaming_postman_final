@@ -140,7 +140,10 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
         # GBDF patterns - use catch-all patterns instead of listing every model
         patterns = [
             os.path.join(base_dir, "GBDTS_*_*_gbdf_mcr_*_sur"),
-            os.path.join(base_dir, "GBDTS_*_*_gbdf_grs_*_sur")
+            os.path.join(base_dir, "GBDTS_*_*_gbdf_grs_*_sur"),
+            os.path.join(base_dir, "GBDTS_*_*_gbdf_mmp_*_sur"),
+            os.path.join(base_dir, "GBDTS_*_*_gbd_mmp_*_sur"),
+            os.path.join(base_dir, "TS_*_*_gbd_mmp_*_sur")
         ]
         ts_folders_list = get_folders_from_patterns(patterns)
         # Filter to only include directories (consistent with other branches)
@@ -182,10 +185,11 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                 r'NYKTS_(\d{1,3})_(.+?)_(RULE[A-Za-z0-9]+)_([A-Za-z0-9]+)_sur$',
             ]
         elif is_gbdf:
-            # GBDF patterns - check GBDTS_* first, then TS_* (both naming conventions exist in source folders)
+            # GBDF patterns - GBDTS_* and TS_*; include mmp so MMP folders are parsed like MCR/GRS (same 5 groups: ts, model_name, mcr|grs|mmp, edit_id, code)
+            # _gbd_f?_ matches both _gbd_mmp_ and _gbdf_mcr_ / _gbdf_grs_
             patterns = [
-                r'GBDTS_(\d{1,3})_(.+?)_gbdf_(mcr|grs)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_sur$',
-                r'TS_(\d{1,3})_(.+?)_gbdf_(mcr|grs)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_sur$'
+                r'GBDTS_(\d{1,3})_(.+?)_gbd_f?_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_sur$',
+                r'TS_(\d{1,3})_(.+?)_gbd_f?_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_sur$'
             ]
         else:
             # WGS_CSBD patterns - try CSBDTS/CSBD_TS first, then TS patterns (including legacy REVENUE)
@@ -386,6 +390,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     # For GBDF MCR Covid, use the full descriptive name
                     base_collection_name = f"TS_{ts_number}_Covid_gbdf_mcr_Collection"
                     base_file_name = f"covid_gbdf_mcr_{edit_id}_{code}"
+                elif "Covid_gbdf_mmp" in folder_name or ("gbdf_mmp" in folder_name and "Covid" in folder_name):
+                    base_collection_name = f"TS_{ts_number}_Covid_gbdf_mmp_Collection"
+                    base_file_name = f"covid_gbdf_mmp_{edit_id}_{code}"
                 elif "Multiple E&M Same day" in folder_name and is_gbdf:
                     # For any GBDF Multiple E&M Same day model, use GBDF naming
                     if "gbdf_mcr" in folder_name:
@@ -394,6 +401,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_Multiple E&M Same day_gbdf_grs_Collection"
                         base_file_name = f"multiple_em_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_Multiple E&M Same day_gbdf_mmp_Collection"
+                        base_file_name = f"multiple_em_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_Multiple E&M Same day_gbdf_Collection"
                         base_file_name = f"multiple_em_gbdf_{edit_id}_{code}"
@@ -405,6 +415,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_NDC UOM Validation Edit Expansion Iprep-138_gbdf_grs_Collection"
                         base_file_name = f"ndc_uom_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_NDC UOM Validation Edit Expansion Iprep-138_gbdf_mmp_Collection"
+                        base_file_name = f"ndc_uom_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_NDC UOM Validation Edit Expansion Iprep-138_gbdf_Collection"
                         base_file_name = f"ndc_uom_gbdf_{edit_id}_{code}"
@@ -416,6 +429,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_No match of Procedure code_gbdf_grs_Collection"
                         base_file_name = f"no_match_procedure_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_No match of Procedure code_gbdf_mmp_Collection"
+                        base_file_name = f"no_match_procedure_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_No match of Procedure code_gbdf_Collection"
                         base_file_name = f"no_match_procedure_gbdf_{edit_id}_{code}"
@@ -427,6 +443,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_Nebulizer A52466 IPERP-132_gbdf_grs_Collection"
                         base_file_name = f"nebulizer_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_Nebulizer A52466 IPERP-132_gbdf_mmp_Collection"
+                        base_file_name = f"nebulizer_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_Nebulizer A52466 IPERP-132_gbdf_Collection"
                         base_file_name = f"nebulizer_gbdf_{edit_id}_{code}"
@@ -438,6 +457,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_outpt_gbdf_grs_Collection"
                         base_file_name = f"unspecified_dx_code_outpt_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_outpt_gbdf_mmp_Collection"
+                        base_file_name = f"unspecified_dx_code_outpt_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_outpt_gbdf_Collection"
                         base_file_name = f"unspecified_dx_code_outpt_gbdf_{edit_id}_{code}"
@@ -449,6 +471,9 @@ def discover_ts_folders(base_dir: str = ".", use_wgs_csbd_destination: bool = Fa
                     elif "gbdf_grs" in folder_name:
                         base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_prof_gbdf_grs_Collection"
                         base_file_name = f"unspecified_dx_code_prof_gbdf_grs_{edit_id}_{code}"
+                    elif "gbdf_mmp" in folder_name or "gbd_mmp" in folder_name:
+                        base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_prof_gbdf_mmp_Collection"
+                        base_file_name = f"unspecified_dx_code_prof_gbdf_mmp_{edit_id}_{code}"
                     else:
                         base_collection_name = f"TS_{ts_number}_Unspecified_dx_code_prof_gbdf_Collection"
                         base_file_name = f"unspecified_dx_code_prof_gbdf_{edit_id}_{code}"
@@ -664,26 +689,36 @@ def print_nested_models_display():
             
             # Extract model type from collection name for better display
             model_type = "General"
-            if "Covid_gbdf_mcr" in collection_name or "Covid" in collection_name:
+            if "Covid_gbdf_mcr" in collection_name or ("Covid" in collection_name and "gbdf_mcr" in collection_name):
                 model_type = "Covid GBDF MCR"
+            elif "Covid_gbdf_mmp" in collection_name or ("Covid" in collection_name and "gbdf_mmp" in collection_name):
+                model_type = "Covid GBDF MMP"
             elif "Multiple E&M Same day_gbdf_mcr" in collection_name:
                 model_type = "Multiple E&M Same day GBDF MCR"
             elif "Multiple E&M Same day_gbdf_grs" in collection_name:
                 model_type = "Multiple E&M Same day GBDF GRS"
+            elif "Multiple E&M Same day_gbdf_mmp" in collection_name:
+                model_type = "Multiple E&M Same day GBDF MMP"
             elif "Multiple E&M Same day" in collection_name and "gbdf" in collection_name.lower():
                 model_type = "Multiple E&M Same day GBDF"
             elif "Unspecified_dx_code_outpt_gbdf_mcr" in collection_name:
                 model_type = "Unspecified dx code outpt GBDF MCR"
             elif "Unspecified_dx_code_outpt_gbdf_grs" in collection_name:
                 model_type = "Unspecified dx code outpt GBDF GRS"
+            elif "Unspecified_dx_code_outpt_gbdf_mmp" in collection_name:
+                model_type = "Unspecified dx code outpt GBDF MMP"
             elif "Unspecified_dx_code_outpt" in collection_name and "gbdf" in collection_name.lower():
                 model_type = "Unspecified dx code outpt GBDF"
             elif "Unspecified_dx_code_prof_gbdf_mcr" in collection_name:
                 model_type = "Unspecified dx code prof GBDF MCR"
             elif "Unspecified_dx_code_prof_gbdf_grs" in collection_name:
                 model_type = "Unspecified dx code prof GBDF GRS"
+            elif "Unspecified_dx_code_prof_gbdf_mmp" in collection_name:
+                model_type = "Unspecified dx code prof GBDF MMP"
             elif "Unspecified_dx_code_prof" in collection_name and "gbdf" in collection_name.lower():
                 model_type = "Unspecified dx code prof GBDF"
+            elif "gbdf_mmp" in collection_name or "gbd_mmp" in collection_name:
+                model_type = "GBDF MMP"
             
             print(f"  {i:2d}. TS_{ts_number:02s} | {model_type}")
             print(f"      |- Edit ID: {edit_id}")
@@ -718,6 +753,10 @@ def print_nested_models_display():
         print("  python main_processor.py --gbdf_grs --GBDTS49")
         print("  python main_processor.py --gbdf_grs --all")
         print()
+        print("GBDF MMP (use --gbdf_mmp --GBDTS<NN>):")
+        print("  python main_processor.py --gbdf_mmp --GBDTS65")
+        print("  python main_processor.py --gbdf_mmp --all")
+        print()
         print("WGS_NYK / WGS_KERNAL (use --wgs_nyk --NYKTS<NN>):")
         print("  python main_processor.py --wgs_nyk --NYKTS124")
         print("  python main_processor.py --wgs_nyk --all")
@@ -726,6 +765,7 @@ def print_nested_models_display():
         print("  python main_processor.py --wgs_csbd --list")
         print("  python main_processor.py --gbdf_mcr --list")
         print("  python main_processor.py --gbdf_grs --list")
+        print("  python main_processor.py --gbdf_mmp --list")
         print("  python main_processor.py --wgs_nyk --list")
     
     print("=" * 80)
