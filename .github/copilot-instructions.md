@@ -1,7 +1,7 @@
 # AI Coding Agent Instructions for renaming_files
 
 ## Project Overview
-Healthcare test case automation system that renames JSON files (mapping `TC#ID#deny.json` → `TC#ID#EditID#Code#LR.json`) and generates Postman API collections for testing across 54 healthcare models (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK).
+Healthcare test case automation system that renames JSON files (mapping `TC#ID#deny.json` → `TC#ID#EditID#Code#LR.json`) and generates Postman API collections for testing WGS_CSBD healthcare models.
 
 ## Architecture: 5-Module Processing Pipeline
 
@@ -10,8 +10,8 @@ Healthcare test case automation system that renames JSON files (mapping `TC#ID#d
 ### Core Modules
 
 1. **`main_processor.py`** - Orchestrator
-   - CLI: `python main_processor.py --[category] --[TSXX]` (e.g., `--wgs_csbd --CSBDTS49`)
-   - 4 model categories: `--wgs_csbd`, `--gbdf_mcr`, `--gbdf_grs`, `--wgs_nyk`
+   - CLI: `python main_processor.py --[category] --[TSXX]` (e.g., `--model_1 --CSBDTS49`)
+   - Model categories: use `--model_1` for WGS_CSBD models (unified, GBDF/WGS_NYK variants consolidated)
    - Coordinates rename → Postman generation → Excel reporting pipeline
    - Key function: `extract_model_info_from_directory()` parses destination paths with regex patterns to extract TS number, model name, edit_id, eob_code
 
@@ -41,11 +41,9 @@ Healthcare test case automation system that renames JSON files (mapping `TC#ID#d
 
 ## Critical Patterns & Conventions
 
-### Model Command Formats (Strict)
-- **WGS_CSBD**: `--wgs_csbd --CSBDTS[XX]` (e.g., `--CSBDTS49`, `--CSBDTS01`). Supports TS01-15, TS20, TS46-56 (27 total)
-- **WGS_NYK**: `--wgs_nyk --NYKTS[XXX]` (requires NYKTS prefix, NOT TSXX). Supports TS122-130, TS132 (10 total)
-- **GBDF_MCR**: `--gbdf_mcr --GBDTS[XX]` (e.g., `--GBDTS47`, `--GBDTS138`). Supports TS47-48, TS60-61, TS70, TS138, TS140, TS144, TS146 (9 total)
-- **GBDF_GRS**: `--gbdf_grs --TS[XX]` (uses TS prefix). Supports TS49, TS59, TS61-62, TS139, TS141, TS145, TS147 (8 total)
+-### Model Command Formats (Strict)
+- **MODEL_1**: `--model_1 --CSBDTS[XX]` (e.g., `--CSBDTS49`, `--CSBDTS01`). Unified model flag for WGS_CSBD healthcare models. 
+
 - All support `--all` flag for batch processing, `--no-postman` to skip collections, `--list` to list models
 
 ### File Transformation Logic
@@ -85,10 +83,10 @@ Healthcare test case automation system that renames JSON files (mapping `TC#ID#d
 
 ### Testing
 ```bash
-python main_processor.py --wgs_csbd --CSBDTS49          # Single model test
-python main_processor.py --wgs_csbd --all               # Batch test
+python main_processor.py --model_1 --CSBDTS49          # Single model test
+python main_processor.py --model_1 --all               # Batch test
 python main_processor.py --list                          # List discoverable models
-python main_processor.py --wgs_csbd --CSBDTS49 --no-postman  # Skip Postman gen
+python main_processor.py --model_1 --CSBDTS49 --no-postman  # Skip Postman gen
 ```
 
 ### Debugging Model Discovery Issues
@@ -117,7 +115,7 @@ python main_processor.py --wgs_csbd --CSBDTS49 --no-postman  # Skip Postman gen
 
 ## Project-Specific Conventions
 
-1. **Naming Clarity**: Model categories use full flags (`--wgs_csbd`) and full argument prefixes (`--CSBDTS49`, `--NYKTS122`, `--GBDTS47`)
+1. **Naming Clarity**: Model categories use unified flag (`--model_1`) for WGS_CSBD/GBDF variants and full argument prefixes (`--CSBDTS49`, `--NYKTS122`, `--GBDTS47`)
 2. **Folder Suffixes**: Source folders end with `_sur` (source), destination with `_dis` (destination)
 3. **Dual Processing**: `regression` and `smoke` test types processed separately for each model
 4. **Timing in MS**: All Excel reports track timing in milliseconds, not seconds

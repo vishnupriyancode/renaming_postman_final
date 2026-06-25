@@ -18,11 +18,8 @@ Help debug and troubleshoot issues with the file renaming automation system, inc
 
 ### 1. Check Model Command Format
 Verify the correct command format is being used:
-- WGS_CSBD: `--wgs_csbd --CSBDTS[XX]`
+- model_1 / GBDF: `--model_1 --CSBDTS[XX]` or `--model_1 --GBDTS[XX]`
 - WGS_NYK: `--wgs_nyk --NYKTS[XXX]` (must use NYKTS prefix)
-- GBDF MCR: `--gbdf_mcr --GBDTS[XX]`
-- GBDF GRS: `--gbdf_grs --GBDTS[XX]`
-- GBDF MMP: `--gbdf_mmp --GBDTS[XX]`
 
 ### 2. Verify Source Paths
 Check that source paths follow the pattern:
@@ -86,7 +83,7 @@ Review generated reports in `reports/Collection_Reports/` for:
 python main_processor.py --list
 
 # Test with specific model (example)
-python main_processor.py --wgs_csbd --CSBDTS01
+python main_processor.py --model_1 --CSBDTS01
 
 # Check environment settings
 cat .env

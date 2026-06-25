@@ -5,8 +5,7 @@ Rename Files Module - Handles file renaming functionality.
 This module contains all the functions related to renaming JSON files from old naming
 conventions to new formats, including:
 - File renaming with suffix mapping
-- Header/footer transformations for WGS_CSBD and WGS_KERNAL files
-- CLCL_ID generation for GBDF files
+ - Header/footer transformations for model_1 files
 - Model information extraction
 - File validation and processing
 
@@ -40,64 +39,46 @@ def extract_model_info_from_directory(dest_dir: str, renamed_files: list) -> dic
         "eob_code": "Unknown"
     }
     
-    def extract_from_match(match, is_gbdf=False):
+    def extract_from_match(match):
         """Helper to extract model info from regex match."""
         if not match:
             return False
         groups = match.groups()
-        if is_gbdf and len(groups) >= 5:
-            ts_number, model_name, _, edit_id, eob_code = groups[0], groups[1], groups[2], groups[3], groups[4]
-        elif len(groups) >= 4:
+        if len(groups) >= 4:
             ts_number, model_name, edit_id, eob_code = groups[0], groups[1], groups[2], groups[3]
         else:
             return False
-        
+
         model_info["tc_id"] = f"TS_{ts_number}"
         model_info["model_name"] = model_name.replace('_', ' ').replace('-', ' ')
         model_info["edit_id"] = edit_id
         model_info["eob_code"] = eob_code
         return True
-    
+
     try:
-        # Determine model LOB and patterns
-        patterns = []
-        if "CSBDTS" in dest_dir or "WGS_CSBD" in dest_dir:
-            model_info["model_lob"] = "WGS_CSBD"
-            patterns = [
-                (r'CSBDTS_(\d{1,3})_(.+?)_WGS_CSBD_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False),
-                (r'TS_(\d{1,3})_(.+?)_WGS_CSBD_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False)
-            ]
-        elif "GBDTS" in dest_dir or "GBDF" in dest_dir:
-            model_info["model_lob"] = "GBDF_MCR" if "mcr" in dest_dir.lower() else "GBDF_GRS" if "grs" in dest_dir.lower() else "GBDF_MMP" if "mmp" in dest_dir.lower() else "GBDF"
-            patterns = [
-                (r'TS_(\d{1,3})_(.+?)_gbdf_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
-                (r'GBDTS_(\d{1,3})_(.+?)_gbdf_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
-                (r'GBDTS_(\d{1,3})_(.+?)_gbd_(mcr|grs|mmp)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', True),
-            ]
-        elif "NYKTS" in dest_dir or "WGS_KERNAL" in dest_dir or "WGS_NYK" in dest_dir:
-            model_info["model_lob"] = "WGS_NYK"
-            patterns = [
-                (r'NYKTS_(\d{1,3})_(.+?)_WGS_NYK_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False)
-            ]
-        
-        # Try patterns in directory traversal
+        patterns = [
+            (r'Model_(\d{1,3})_(.+?)_model_1_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False),
+            (r'TS_(\d{1,3})_(.+?)_model_1_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False),
+            (r'Model_(\d{1,3})_(.+?)_([A-Za-z0-9]+)_([A-Za-z0-9]+)_(sur|dis)$', False),
+        ]
+        model_info["model_lob"] = "model_1"
+
         current_path = dest_dir
         for _ in range(5):
             current_path = os.path.dirname(current_path)
             dir_name = os.path.basename(current_path)
-            
-            for pattern, is_gbdf in patterns:
-                if extract_from_match(re.match(pattern, dir_name), is_gbdf):
+
+            for pattern, _ in patterns:
+                if extract_from_match(re.match(pattern, dir_name)):
                     return model_info
-            
-            if dir_name in ["CSBDTS", "GBDTS", "NYKTS", "WGS_CSBD", "GBDF", "WGS_KERNAL", "WGS_NYK", "renaming_jsons", "source_folder", ""]:
+
+            if dir_name in ["model_1", "renaming_jsons", "source_folder", ""]:
                 break
-        
-        # Fallback: Try patterns in full path
+
         path_parts = dest_dir.split(os.sep)
         for part in path_parts:
-            for pattern, is_gbdf in patterns:
-                if extract_from_match(re.search(pattern, part), is_gbdf):
+            for pattern, _ in patterns:
+                if extract_from_match(re.search(pattern, part)):
                     return model_info
         
         # Final fallback: Extract from filename
@@ -117,9 +98,9 @@ def extract_model_info_from_directory(dest_dir: str, renamed_files: list) -> dic
     return model_info
 
 
-def clean_duplicate_fields_csbd(file_path):
+def clean_duplicate_fields(file_path):
     """
-    Clean up duplicate fields in existing CSBD JSON files.
+    Clean up duplicate fields in existing model_1 JSON files.
     This function removes duplicate fields that may have been created by previous versions.
     
     Args:
@@ -179,25 +160,13 @@ def clean_duplicate_fields_csbd(file_path):
         return False
 
 
-def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
+def apply_model_1_header_footer(file_path):
     """
-    Apply header and footer structure to WGS_CSBD and WGS_KERNAL JSON files.
-    This function transforms the JSON content by wrapping the existing data
-    with the required header and footer metadata, avoiding duplicate fields.
-    Additionally, generates random 11-digit numbers for KEY_CHK_CDN_NBR field.
+    Apply header and footer structure to model_1 JSON files.
+    Wraps the JSON content with required header and footer metadata.
+    Generates random KEY_CHK_DCN_NBR values when present.
 
-    meta-transid: WGS_Kernal uses "20240705012036TMBLMMY437A003580999CS90TIMBER01";
-    WGS_CSBD uses "20220117181853TMBL20359Cl893580999".
-    
-    This function ALWAYS ensures the header/footer structure is present,
-    even if the file already has it (to ensure consistency).
-    
-    Args:
-        file_path: Path to the JSON file to transform
-        is_wgs_kernal: If True, use WGS_Kernal meta-transid; else use WGS_CSBD meta-transid
-        
-    Returns:
-        bool: True if transformation was successful, False otherwise
+    meta-transid: "20220117181853TMBL20359Cl893580999" for model_1.
     """
     import random
     
@@ -214,8 +183,7 @@ def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
                                 "meta-src-envrmt" in existing_data and
                                 "meta-transid" in existing_data)
         
-        # meta-transid: WGS_Kernal uses dedicated value; WGS_CSBD uses legacy value
-        meta_transid = "20240705012036TMBLMMY437A003580999CS90TIMBER01" if is_wgs_kernal else "20220117181853TMBL20359Cl893580999"
+        meta_transid = "20220117181853TMBL20359Cl893580999"
         # Header and footer structure (always use these values)
         header_footer = {
             "adhoc": "true",
@@ -291,81 +259,6 @@ def apply_wgs_csbd_header_footer(file_path, is_wgs_kernal=False):
         return False
 
 
-def apply_gbdf_clcl_id_generation(file_path):
-    """
-    Generate KEY_CHK_DCN_NBR and CLCL_ID for GBDF/MMP JSON files: 7 random digits + "TEST" (11 chars, last 4 TEST).
-    Applies to root and payload levels. Also handles claim_header path for CLCL_ID.
-    
-    Args:
-        file_path: Path to the JSON file to transform
-        
-    Returns:
-        bool: True if at least one transformation was successful, False otherwise
-    """
-    import random
-    
-    def update_clcl_id(data, path_name):
-        """Helper to update CLCL_ID at a given path."""
-        if isinstance(data, dict) and "CLCL_ID" in data:
-            data["CLCL_ID"] = clcl_id_value
-            print(f"[INFO] Generated CLCL_ID ({path_name}): {clcl_id_value}")
-            return True
-        return False
-    
-    def update_key_chk_dcn_nbr(data, path_name):
-        """Helper to update KEY_CHK_DCN_NBR at a given path."""
-        if isinstance(data, dict) and "KEY_CHK_DCN_NBR" in data:
-            data["KEY_CHK_DCN_NBR"] = key_chk_value
-            print(f"[INFO] Generated KEY_CHK_DCN_NBR ({path_name}): {key_chk_value}")
-            return True
-        return False
-    
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            existing_data = json.load(f)
-        
-        # 11 chars: 7 random digits + "TEST" (last 4 digits as TEST)
-        clcl_id_value = str(random.randint(1000000, 9999999)) + "TEST"
-        key_chk_value = str(random.randint(1000000, 9999999)) + "TEST"
-        clcl_id_updated = False
-        key_chk_updated = False
-        
-        # KEY_CHK_DCN_NBR: root and payload level
-        for data, path_name in [
-            (existing_data, "root level"),
-            (existing_data.get("payload", {}) if isinstance(existing_data, dict) else {}, "payload level"),
-        ]:
-            if update_key_chk_dcn_nbr(data, path_name):
-                key_chk_updated = True
-        
-        # CLCL_ID: all possible paths
-        paths_to_check = [
-            (existing_data, "root level"),
-            (existing_data.get("payload", {}) if isinstance(existing_data, dict) else {}, "payload level"),
-            (existing_data.get("claim_header", [{}])[0] if isinstance(existing_data, dict) and isinstance(existing_data.get("claim_header"), list) and existing_data["claim_header"] else {}, "claim_header[0] level"),
-            (existing_data.get("payload", {}).get("claim_header", [{}])[0] if isinstance(existing_data, dict) and isinstance(existing_data.get("payload"), dict) and isinstance(existing_data["payload"].get("claim_header"), list) and existing_data["payload"]["claim_header"] else {}, "payload.claim_header[0] level")
-        ]
-        for data, path_name in paths_to_check:
-            if update_clcl_id(data, path_name):
-                clcl_id_updated = True
-        
-        if clcl_id_updated or key_chk_updated:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(existing_data, f, indent=2, ensure_ascii=False)
-            print(f"[SUCCESS] Applied KEY_CHK_DCN_NBR/CLCL_ID generation to: {file_path}")
-            return True
-        else:
-            print(f"[WARNING] No CLCL_ID or KEY_CHK_DCN_NBR field found in {file_path}, skipping transformation")
-            return False
-        
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Error parsing JSON in {file_path}: {e}")
-        return False
-    except Exception as e:
-        print(f"[ERROR] Error applying CLCL_ID generation to {file_path}: {e}")
-        return False
-
-
 def validate_suffix(suffix, filename):
     """
     Validate that the suffix is one of the allowed values.
@@ -388,7 +281,7 @@ def validate_suffix(suffix, filename):
     return True
 
 
-def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, generate_postman=True, postman_collection_name=None, postman_file_name=None, excel_reporter=None, ts_number=None):
+def rename_files(edit_id="M000001", code="00W04", source_dir=None, dest_dir=None, generate_postman=True, postman_collection_name=None, postman_file_name=None, excel_reporter=None, ts_number=None):
     """
     STAGE 1: FILE RENAMING FUNCTION
     ===============================
@@ -412,7 +305,7 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
         postman_collection_name: Name for the Postman collection
         postman_file_name: Custom filename for the Postman collection JSON file
         excel_reporter: Excel reporter instance for timing tracking
-        ts_number: TS number (e.g. "66"); for GBDF models, used to build collection folder as TS{ts_number}_{edit_id}_{model_name}
+        ts_number: TS number (e.g. "01")
         
     Returns:
         list: List of renamed file names
@@ -451,11 +344,10 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
     # ============================================
     # Auto-generate paths if not provided
     if source_dir is None:
-        source_dir = f"source_folder/WGS_CSBD/TS_01_REVENUE_WGS_CSBD_{edit_id}_{code}_payloads_sur/regression"
+        source_dir = f"source_folder/model_1/Model_01_sample_model_1_{edit_id}_{code}_sur/payloads/regression"
     
     if dest_dir is None:
-        # Default to renaming_jsons for backward compatibility
-        dest_dir = f"renaming_jsons/TS_01_REVENUE_WGS_CSBD_{edit_id}_{code}_payloads_dis/regression"
+        dest_dir = f"renaming_jsons/model_1/Model_01_sample_model_1_{edit_id}_{code}_dis/payloads/regression"
     
     if not os.path.exists(source_dir):
         print(f"Source directory {source_dir} not found!")
@@ -525,23 +417,15 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                 shutil.copy2(source_path, dest_path)
                 print(f"Successfully copied and renamed: {filename} -> {new_filename}")
                 
-                # Apply header/footer transformation for WGS_CSBD, WGS_KERNAL, and WGS_NYK (NYKTS) files
-                if "WGS_CSBD" in dest_dir or "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir:
-                    model_type = "WGS_CSBD" if "WGS_CSBD" in dest_dir else ("WGS_NYK" if ("NYKTS" in dest_dir or "WGS_NYK" in dest_dir) else "WGS_KERNAL")
-                    is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir
-                    print(f"Applying {model_type} header/footer transformation to: {new_filename}")
-                    if apply_wgs_csbd_header_footer(dest_path, is_wgs_kernal=is_wgs_kernal):
+                # Apply header/footer transformation for model_1 files
+                if "model_1" in dest_dir:
+                    print(f"Applying model_1 header/footer transformation to: {new_filename}")
+                    if apply_model_1_header_footer(dest_path):
                         print(f"[SUCCESS] Header/footer applied to: {new_filename}")
                     else:
                         print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
-                
-                # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
-                elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
-                    print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
-                    if apply_gbdf_clcl_id_generation(dest_path):
-                        print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
-                    else:
-                        print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
+                else:
+                    print(f"[INFO] No header/footer transformation needed for: {new_filename}")
                 
                 # Remove the original file
                 os.remove(source_path)
@@ -590,23 +474,15 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                 shutil.copy2(source_path, dest_path)
                 print(f"Successfully copied and renamed: {filename} -> {new_filename}")
                 
-                # Apply header/footer transformation for WGS_CSBD, WGS_KERNAL, and WGS_NYK (NYKTS) files
-                if "WGS_CSBD" in dest_dir or "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir:
-                    model_type = "WGS_CSBD" if "WGS_CSBD" in dest_dir else ("WGS_NYK" if ("NYKTS" in dest_dir or "WGS_NYK" in dest_dir) else "WGS_KERNAL")
-                    is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir
-                    print(f"Applying {model_type} header/footer transformation to: {new_filename}")
-                    if apply_wgs_csbd_header_footer(dest_path, is_wgs_kernal=is_wgs_kernal):
+                # Apply header/footer transformation for model_1 files
+                if "model_1" in dest_dir:
+                    print(f"Applying model_1 header/footer transformation to: {new_filename}")
+                    if apply_model_1_header_footer(dest_path):
                         print(f"[SUCCESS] Header/footer applied to: {new_filename}")
                     else:
                         print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
-                
-                # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
-                elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
-                    print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
-                    if apply_gbdf_clcl_id_generation(dest_path):
-                        print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
-                    else:
-                        print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
+                else:
+                    print(f"[INFO] No header/footer transformation needed for: {new_filename}")
                 
                 # Remove the original file
                 os.remove(source_path)
@@ -668,23 +544,15 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                     shutil.copy2(source_path, dest_path)
                     print(f"Successfully moved: {filename}")
                     
-                    # Apply header/footer transformation for WGS_CSBD, WGS_KERNAL, and WGS_NYK (NYKTS) files
-                    if "WGS_CSBD" in dest_dir or "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir:
-                        model_type = "WGS_CSBD" if "WGS_CSBD" in dest_dir else ("WGS_NYK" if ("NYKTS" in dest_dir or "WGS_NYK" in dest_dir) else "WGS_KERNAL")
-                        is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir
-                        print(f"Applying {model_type} header/footer transformation to: {new_filename}")
-                        if apply_wgs_csbd_header_footer(dest_path, is_wgs_kernal=is_wgs_kernal):
+                    # Apply header/footer transformation for model_1 files
+                    if "model_1" in dest_dir:
+                        print(f"Applying model_1 header/footer transformation to: {new_filename}")
+                        if apply_model_1_header_footer(dest_path):
                             print(f"[SUCCESS] Header/footer applied to: {new_filename}")
                         else:
                             print(f"[WARNING] Failed to apply header/footer to: {new_filename}")
-                    
-                    # Apply KEY_CHK_DCN_NBR and CLCL_ID generation for GBDF/MMP files
-                    elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
-                        print(f"Applying GBDF/MMP KEY_CHK_DCN_NBR and CLCL_ID generation to: {new_filename}")
-                        if apply_gbdf_clcl_id_generation(dest_path):
-                            print(f"[SUCCESS] KEY_CHK_DCN_NBR/CLCL_ID generation applied to: {new_filename}")
-                        else:
-                            print(f"[WARNING] Failed to apply KEY_CHK_DCN_NBR/CLCL_ID generation to: {new_filename}")
+                    else:
+                        print(f"[INFO] No header/footer transformation needed for: {new_filename}")
                     
                     # Remove the original file
                     os.remove(source_path)
@@ -723,16 +591,7 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
             # STAGE 2.1: POSTMAN GENERATOR SETUP
             # ==================================
             # Initialize Postman generator with specific model directory
-            # Output folder matches model type: WGS_CSBD (incl. CSBDTS), WGS_KERNAL (NYKTS/WGS_NYK), or GBDF
-            if "WGS_CSBD" in dest_dir or "CSBDTS" in dest_dir:
-                output_dir = "postman_collections/WGS_CSBD"
-            elif "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir:
-                output_dir = "postman_collections/WGS_KERNAL"
-            elif "GBDF" in dest_dir or "GBDTS" in dest_dir:
-                output_dir = "postman_collections/GBDF"
-            else:
-                output_dir = "postman_collections/WGS_KERNAL"  # default fallback
-
+            output_dir = "postman_collections/model_1"
             generator = PostmanCollectionGenerator(
                 source_dir=dest_dir,  # Use the specific model's destination directory
                 output_dir=output_dir
@@ -755,45 +614,25 @@ def rename_files(edit_id="rvn001", code="00W5", source_dir=None, dest_dir=None, 
                 
                 # Fallback to auto-generated name if not found
                 if postman_collection_name is None:
-                    postman_collection_name = f"TS_01_REVENUE_WGS_CSBD_{edit_id}_{code}"
+                    postman_collection_name = f"Model_01_sample_model_1_{edit_id}_{code}"
             
             # File-based name for Bruno: use config postman_file_name, or derive from collection name + regression/smoke
             test_type = "regression" if "regression" in dest_dir else "smoke"
             if postman_file_name:
-                # Append test type so filename and collection name match (e.g. covid_wgs_csbd_RULEEM000001_W04_regression)
+                # Append test type so filename and collection name match (e.g. covid_model_1_RULEEM000001_W04_regression)
                 base_stem = os.path.splitext(postman_file_name)[0]
                 custom_filename = f"{base_stem}_{test_type}.json"
             else:
                 slug = re.sub(r"[^\w\-]", "_", postman_collection_name).strip("_")
                 custom_filename = f"{slug}_{test_type}.json"
             
-            # Collection display name in Postman = filename stem (so imported collection shows e.g. covid_wgs_csbd_RULEEM000001_W04_regression)
+            # Collection display name in Postman = filename stem (so imported collection shows e.g. covid_model_1_RULEEM000001_W04_regression)
             collection_display_name = os.path.splitext(custom_filename)[0]
             
             # STAGE 2.3: COLLECTION GENERATION
             # ===============================
-            # Determine model type for Postman HEADERS (meta-transid) and URL (MMP uses GetRecommendations)
-            is_gbdf_model = "GBDF" in dest_dir or "GBDTS" in dest_dir
-            is_wgs_kernal = "WGS_KERNAL" in dest_dir or "WGS_Kernal" in dest_dir or "NYKTS" in dest_dir or "WGS_NYK" in dest_dir
-            is_gbdf_mmp = is_gbdf_model and "mmp" in dest_dir.lower()
-            # For GBDF models: store collection in folder named ts_id_model (e.g. TS66_RULE00000022_inaccurate_laterality).
-            # Use short model name (before _edit_ / _gbd_facets_ / _gbd_) so regression and smoke both go under the same folder.
-            gbdf_collection_folder = None
-            if is_gbdf_model and ts_number:
-                base = re.sub(r"_(regression|smoke)$", "", collection_display_name)
-                model_slug = base.replace(f"_{edit_id}_{code}", "").strip("_") or base
-                model_slug = re.sub(r"[^\w\-]", "_", model_slug).strip("_")
-                # Shorten to part before _edit_, _gbd_facets_, or _gbd_ (e.g. inaccurate_laterality_edit_gbd_facets_mmp -> inaccurate_laterality)
-                for sep in ("_edit_", "_gbd_facets_", "_gbd_"):
-                    if sep in model_slug:
-                        model_slug = model_slug.split(sep)[0]
-                        break
-                gbdf_collection_folder = f"TS{ts_number}_{edit_id}_{model_slug}"
-            
-            # Generate collection (wgs_kernal vs wgs_csbd sets meta-transid; MMP uses claims/Timber/GetRecommendations URL; GBDF uses ts_id_model folder)
             collection_path = generator.generate_postman_collection(
-                collection_display_name, custom_filename, is_gbdf_model, is_wgs_kernal, is_gbdf_mmp,
-                gbdf_collection_folder=gbdf_collection_folder
+                collection_display_name, custom_filename
             )
             
             if collection_path:

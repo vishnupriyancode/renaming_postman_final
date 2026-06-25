@@ -27,63 +27,85 @@ from openpyxl import load_workbook
 
 # Model mapping from Excel sheet names to config keys
 MODEL_SHEET_MAPPING = {
-    "WGS_CSBD": "wgs_csbd",
-    "GBDF_MCR": "gbdf_mcr",  # GBDF MCR models
-    "GBDF_GRS": "gbdf_grs",  # GBDF GRS models
-    "GBDF_MMP": "gbdf_mmp",  # GBDF MMP models
-    "GBDF": "gbdf_mcr",  # Default to MCR for backward compatibility
-    "KERNAL": "wgs_kernal"
+    "model_1": "model_1",
+    "C_list": "model_1",
 }
+
+# Legacy LOB tokens no longer accepted in Excel edit strings or Test Suite IDs
+DEPRECATED_LOB_TOKENS = frozenset({
+    "wgs", "csbd", "gbdf", "grs", "nyk", "kernal", "kernel",
+    "wgs_csbd", "wgs_nyk", "wgs_kernal", "gbd", "mcr", "mmp",
+    "csbdts", "gbdts", "nykts",
+})
+DEPRECATED_TS_PREFIXES = ("CSBDTS", "GBDTS", "NYKTS", "WGS_CSBD", "WGS_NYK", "GBDF", "GRS")
+
+
+def _deprecated_lob_token_in_parts(parts: List[str]) -> Optional[str]:
+    """Return deprecated token found in edit-string parts, or None."""
+    for part in parts[1:]:
+        part_clean = re.sub(r"[^\w]", "", part.split("--")[0].strip().lower())
+        if part_clean in DEPRECATED_LOB_TOKENS:
+            return part_clean
+        for token in DEPRECATED_LOB_TOKENS:
+            if len(token) > 3 and token in part_clean:
+                return token
+    return None
+
+
+def _deprecated_test_suite_id(test_suite_id: str) -> Optional[str]:
+    """Return error detail if Test Suite ID uses a deprecated prefix."""
+    if test_suite_id is None or (isinstance(test_suite_id, float) and pd.isna(test_suite_id)):
+        return None
+    val = str(test_suite_id).strip()
+    if not val:
+        return None
+    upper = val.upper()
+    for prefix in DEPRECATED_TS_PREFIXES:
+        if upper.startswith(prefix):
+            return prefix
+    if re.search(r"(CSBDTS|GBDTS|NYKTS|WGS_NYK|WGS_CSBD|GBDF|GRS)", upper):
+        return upper.split()[0]
+    return None
+
+
+def _deprecated_command(command: str) -> Optional[str]:
+    """Return deprecated token if generate_command uses old CLI flags."""
+    if not command:
+        return None
+    lower = str(command).lower()
+    deprecated_flags = (
+        "--csbdts", "--gbdts", "--nykts", "--wgs_nyk", "--wgs_csbd",
+        "--model_2", "--model_3", "--gbdf_mmp", "wgs_csbd", "gbdf_grs", "gbdf_mmp",
+    )
+    for flag in deprecated_flags:
+        if flag in lower:
+            return flag
+    return None
+
+
+def _non_empty_edit_rows(df: pd.DataFrame, edit_column: str) -> pd.DataFrame:
+    """Return only rows that have a non-empty edit details value."""
+    col = df[edit_column]
+    mask = col.notna() & (col.astype(str).str.strip() != "")
+    return df.loc[mask]
 
 
 def _excel_sheet_for_reading(sheet_name: str) -> str:
-    """Return the Excel sheet name to read/write. GBDF_MMP uses the GBDF sheet."""
-    if sheet_name == "GBDF_MMP":
-        return "GBDF"
+    """Return the Excel sheet name to read/write."""
     return sheet_name
 
 
-def is_grs_edit(edit_string: str, sheet_name: str) -> bool:
+def parse_edit_string(edit_string: str, sheet_name: str = "model_1") -> Optional[Dict[str, str]]:
     """
-    Detect if an edit string indicates a GBDF GRS model.
-    """
-    if not edit_string or pd.isna(edit_string):
-        return False
-    if sheet_name == "GBDF_GRS":
-        return True
-    if sheet_name not in ["GBDF", "GBDF_MCR", "GBDF_GRS"]:
-        return False
-    edit_lower = str(edit_string).lower()
-    has_grs = bool(re.search(r'\bgrs\b', edit_lower)) or "gbdf_grs" in edit_lower
-    has_mcr = bool(re.search(r'\bmcr\b', edit_lower)) or "gbdf_mcr" in edit_lower
-    return has_grs and not has_mcr
+    Parse edit string for model_1. Deprecated LOB formats are rejected.
 
+    Accepted examples:
+    - RULEEM000001~covid~model_1~00W04--live
+    - RULESUB4000001~Expansion on sub-edit4--live (model_1 prefix added automatically)
 
-def is_mmp_edit(edit_string: str, sheet_name: str) -> bool:
-    """
-    Detect if an edit string indicates a GBDF MMP model.
-    """
-    if not edit_string or pd.isna(edit_string):
-        return False
-    if sheet_name == "GBDF_MMP":
-        return True
-    if sheet_name not in ["GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"]:
-        return False
-    edit_lower = str(edit_string).lower()
-    has_mmp = bool(re.search(r'\bmmp\b', edit_lower)) or "gbdf_mmp" in edit_lower
-    has_grs = bool(re.search(r'\bgrs\b', edit_lower)) or "gbdf_grs" in edit_lower
-    has_mcr = bool(re.search(r'\bmcr\b', edit_lower)) or "gbdf_mcr" in edit_lower
-    return has_mmp and not has_grs and not has_mcr
+    Rejected (legacy — update Excel):
+    - RULEEM000001~covid~wgs~csbd~00W17--live
 
-
-def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optional[Dict[str, str]]:
-    """
-    Parse edit string in ANY flexible format with any number of parts:
-    - Standard: RULEEM000001~covid~wgs~csbd~00W17--live (5 parts)
-    - Short: RULESUB4000001~Expansion on sub-edit4--live (2 parts)
-    - With space: RULESUB4000001~Expansion on sub-edit4 --live (2 parts)
-    - Any format: RULEXXX~part1~part2~...~partN--live (any N parts)
-    
     Returns:
         Dictionary with keys: edit_id, model_name_with_lob, eob_code
         or None if parsing fails
@@ -111,6 +133,14 @@ def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optiona
     
     if len(parts) < 1:
         print(f"[WARNING] Invalid edit string format (empty or no valid parts): {edit_string}")
+        return None
+
+    deprecated = _deprecated_lob_token_in_parts(parts)
+    if deprecated:
+        print(
+            f"[REJECTED] Legacy edit string format (contains '{deprecated}'): {edit_string}\n"
+            f"           Use model_1 format, e.g. RULEEM000001~covid~model_1~00W04--live"
+        )
         return None
     
     # Extract edit_id (first part is always edit_id)
@@ -201,30 +231,9 @@ def parse_edit_string(edit_string: str, sheet_name: str = "WGS_CSBD") -> Optiona
         model_name_with_lob = "edit"
     
     # Add sheet-based prefix if model name doesn't already have it
-    if sheet_name == "WGS_CSBD":
-        if not any(prefix in model_name_with_lob.lower() for prefix in ['wgs', 'csbd']):
-            model_name_with_lob = f"wgs_csbd_{model_name_with_lob}"
-    elif sheet_name in ["GBDF", "GBDF_MCR"]:
-        # Check if edit string contains 'grs' / 'mmp' to determine GRS / MMP vs MCR
-        if 'grs' in edit_string.lower() and 'mcr' not in edit_string.lower():
-            if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'grs']):
-                model_name_with_lob = f"gbdf_grs_{model_name_with_lob}"
-        elif 'mmp' in edit_string.lower() and 'grs' not in edit_string.lower() and 'mcr' not in edit_string.lower():
-            if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mmp']):
-                model_name_with_lob = f"gbdf_mmp_{model_name_with_lob}"
-        else:
-            # Default to MCR
-            if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mcr']):
-                model_name_with_lob = f"gbdf_mcr_{model_name_with_lob}"
-    elif sheet_name == "GBDF_GRS":
-        if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'grs']):
-            model_name_with_lob = f"gbdf_grs_{model_name_with_lob}"
-    elif sheet_name == "GBDF_MMP":
-        if not any(prefix in model_name_with_lob.lower() for prefix in ['gbdf', 'mmp']):
-            model_name_with_lob = f"gbdf_mmp_{model_name_with_lob}"
-    elif sheet_name == "KERNAL":
-        if not any(prefix in model_name_with_lob.lower() for prefix in ['wgs', 'nyk', 'kernal']):
-            model_name_with_lob = f"wgs_nyk_{model_name_with_lob}"
+    # Only model_1 remains
+    if not any(prefix in model_name_with_lob.lower() for prefix in ['model_1']):
+        model_name_with_lob = f"model_1_{model_name_with_lob}"
     
     # Clean up EOB code (remove any trailing spaces)
     eob_code = eob_code.strip() if eob_code else "00W00"
@@ -322,15 +331,7 @@ def _get_model_ts_prefix(model_type: str) -> str:
     """
     Get the TS prefix used in Excel/Test Suite IDs for a model type.
     """
-    if model_type == "wgs_csbd":
-        return "CSBDTS"
-    if model_type == "gbdf_mcr":
-        return "GBDTS"
-    if model_type == "gbdf_grs":
-        return "GBDTS"
-    if model_type == "wgs_kernal":
-        return "NYKTS"
-    return "CSBDTS"
+    return "TS"
 
 
 def _resolve_edit_column(df: pd.DataFrame) -> Optional[str]:
@@ -340,8 +341,7 @@ def _resolve_edit_column(df: pd.DataFrame) -> Optional[str]:
     candidates = [
         "List of Edits that need to be Automated",
         "List of Edits to be Automated",
-        "List of Edits  to be Automated",  # Double space (Excel GBDF sheet)
-        "List of EdiGBDTS that need to be Automated",  # Known typo in GBDF sheet
+        "List of Edits  to be Automated",
     ]
     for candidate in candidates:
         if candidate in df.columns:
@@ -362,25 +362,11 @@ def _get_sheet_df_with_edit_column(
     actual_sheet: str,
 ) -> Tuple[pd.DataFrame, Optional[str]]:
     """
-    Return (df, edit_column) for the sheet. For GBDF sheets, if the edit column
-    is not found (header in row 0), re-read with header=1 so "List of Edits to be Automated"
-    in row 2 is used as the column header.
+    Return (df, edit_column) for the sheet.
     """
     df = excel_data[actual_sheet]
     edit_column = _resolve_edit_column(df)
-    if edit_column:
-        return df, edit_column
-    for name in ("GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"):
-        if sheet_name == name or actual_sheet == name:
-            try:
-                df_alt = pd.read_excel(excel_path, sheet_name=actual_sheet, header=1)
-            except Exception:
-                break
-            edit_column = _resolve_edit_column(df_alt)
-            if edit_column:
-                return df_alt, edit_column
-            break
-    return df, None
+    return df, edit_column
 
 
 def _get_test_suite_id_column(df: pd.DataFrame) -> Optional[str]:
@@ -425,7 +411,7 @@ def _excel_patch_cells_only(
     """
     Update only specific cells in the Excel file using openpyxl.
     Does not rewrite entire sheets, so formulas in other cells are preserved.
-    Applies to any sheet (e.g. WGS_CSBD/CSBD, KERNAL, GBDF/GBD, GBDF_MCR, GBDF_GRS).
+    Applies to any sheet (e.g. model_1, C_list).
     updates: list of dicts with keys row_index (0-based), and optional
       cmd_status, test_suite_id (only written when cell is empty if we have value).
     data_start_row_offset: 1 if header is in row 1 (data in 2,3,...), 2 if header in row 2.
@@ -523,7 +509,7 @@ def generate_model_name(edit_id: str, model_name_with_lob: str) -> str:
     For now, we'll use a simple approach - can be enhanced later.
     """
     # Extract a simple name from model_name_with_lob
-    # e.g., "covid_wgs_csbd" -> "Covid"
+    # e.g., "covid_model_1" -> "Covid"
     parts = model_name_with_lob.split('_')
     if parts:
         # Capitalize first letter
@@ -536,7 +522,7 @@ def generate_config_entry(
     edit_id: str,
     eob_code: str,
     model_name_with_lob: str,
-    model_type: str = "wgs_csbd"
+    model_type: str = "model_1"
 ) -> Dict:
     """
     Generate a config entry in STATIC_MODELS_CONFIG format.
@@ -545,52 +531,17 @@ def generate_config_entry(
         ts_number: TS number (e.g., "01")
         edit_id: Edit ID (e.g., "RULEEM000001")
         eob_code: EOB code (e.g., "00W04")
-        model_name_with_lob: Model name with LOB (e.g., "covid_wgs_csbd")
-        model_type: Model type key (e.g., "wgs_csbd")
+        model_name_with_lob: Model name with LOB (e.g., "covid_model_1")
+        model_type: Model type key (e.g., "model_1")
         
     Returns:
         Dictionary with config entry
     """
-    # Determine folder structure based on model type
-    if model_type == "wgs_csbd":
-        ts_prefix = "CSBDTS"
-        source_base = "source_folder/WGS_CSBD"
-        dest_base = "renaming_jsons/CSBDTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_WGS_CSBD_{edit_id}_{eob_code}"
-    elif model_type == "gbdf_mcr":
-        ts_prefix = "GBDTS"
-        source_base = "source_folder/GBDF"
-        dest_base = "renaming_jsons/GBDTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        # Use gbd_mcr in path to match Excel GBDF sheet / models_config convention
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_gbd_mcr_{edit_id}_{eob_code}"
-    elif model_type == "gbdf_grs":
-        ts_prefix = "TS"
-        source_base = "source_folder/GBDF"
-        dest_base = "renaming_jsons/GBDTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        # Use gbd_grs in path to match Excel GBDF sheet / models_config convention
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_gbd_grs_{edit_id}_{eob_code}"
-    elif model_type == "gbdf_mmp":
-        ts_prefix = "GBDTS"
-        source_base = "source_folder/GBDF"
-        dest_base = "renaming_jsons/GBDTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_gbd_mmp_{edit_id}_{eob_code}"
-    elif model_type == "wgs_kernal":
-        ts_prefix = "NYKTS"
-        source_base = "source_folder/WGS_Kernal"
-        dest_base = "renaming_jsons/NYKTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_WGS_NYK_{edit_id}_{eob_code}"
-    else:
-        # Default to wgs_csbd format
-        ts_prefix = "CSBDTS"
-        source_base = "source_folder/WGS_CSBD"
-        dest_base = "renaming_jsons/CSBDTS"
-        model_name = generate_model_name(edit_id, model_name_with_lob)
-        folder_name = f"{ts_prefix}_{ts_number}_{model_name}_WGS_CSBD_{edit_id}_{eob_code}"
+    ts_prefix = "Model"
+    source_base = "source_folder/model_1"
+    dest_base = "renaming_jsons/model_1"
+    model_name = generate_model_name(edit_id, model_name_with_lob)
+    folder_name = f"{ts_prefix}_{ts_number}_{model_name}_model_1_{edit_id}_{eob_code}"
     
     # Generate paths
     source_dir = f"{source_base}/{folder_name}_sur/payloads/regression"
@@ -616,7 +567,7 @@ def generate_config_entry(
 def check_command_exists(
     df: pd.DataFrame,
     ts_number: str,
-    model_type: str = "wgs_csbd"
+    model_type: str = "model_1"
 ) -> bool:
     """
     Check if command already exists in Excel file.
@@ -624,25 +575,13 @@ def check_command_exists(
     Args:
         df: DataFrame from Excel sheet
         ts_number: TS number to check
-        model_type: Model type (wgs_csbd, gbdf_mcr, etc.)
+        model_type: Model type (model_1, model_2, etc.)
         
     Returns:
         True if command exists, False otherwise
     """
     # Generate command pattern
-    if model_type == "wgs_csbd":
-        cmd_pattern = f"CSBDTS{ts_number}"
-    elif model_type == "gbdf_mcr":
-        cmd_pattern = f"GBDTS{ts_number}"
-    elif model_type == "gbdf_grs":
-        cmd_pattern = f"GBDTS{ts_number}"
-    elif model_type == "gbdf_mmp":
-        cmd_pattern = f"GBDTS{ts_number}"
-    elif model_type == "wgs_kernal":
-        cmd_pattern = f"NYKTS{ts_number}"
-    else:
-        cmd_pattern = f"CSBDTS{ts_number}"
-    
+    cmd_pattern = f"TS{ts_number}"
     ts_id_col = _get_test_suite_id_column(df)
     if ts_id_col:
         test_suite_ids = df[ts_id_col].astype(str)
@@ -650,29 +589,18 @@ def check_command_exists(
     return False
 
 
-def generate_command(ts_number: str, model_type: str = "wgs_csbd") -> str:
+def generate_command(ts_number: str, model_type: str = "model_1") -> str:
     """
     Generate command string.
     
     Args:
         ts_number: TS number (e.g., "01")
-        model_type: Model type (wgs_csbd, gbdf_mcr, etc.)
+        model_type: Model type (model_1, model_2, etc.)
         
     Returns:
-        Command string (e.g., "python main_processor.py --wgs_csbd --CSBDTS01")
+        Command string (e.g., "python main_processor.py --model_1 --TS01")
     """
-    if model_type == "wgs_csbd":
-        return f"python main_processor.py --wgs_csbd --CSBDTS{ts_number}"
-    elif model_type == "gbdf_mcr":
-        return f"python main_processor.py --gbdf_mcr --GBDTS{ts_number}"
-    elif model_type == "gbdf_grs":
-        return f"python main_processor.py --gbdf_grs --GBDTS{ts_number}"
-    elif model_type == "gbdf_mmp":
-        return f"python main_processor.py --gbdf_mmp --GBDTS{ts_number}"
-    elif model_type == "wgs_kernal":
-        return f"python main_processor.py --wgs_nyk --NYKTS{ts_number}"
-    else:
-        return f"python main_processor.py --wgs_csbd --CSBDTS{ts_number}"
+    return f"python main_processor.py --model_1 --TS{ts_number}"
 
 
 def read_edits_list(excel_path: str = "edits_list.xlsx") -> Dict[str, pd.DataFrame]:
@@ -703,7 +631,7 @@ def _resolve_sheet_name(excel_data: Dict, sheet_name: str) -> Optional[str]:
 
 def sync_config_from_excel(
     excel_path: str = "edits_list.xlsx",
-    sheet_name: str = "GBDF",
+    sheet_name: str = "model_1",
     dry_run: bool = False
 ) -> List[Dict]:
     """
@@ -722,8 +650,6 @@ def sync_config_from_excel(
 
     if actual_sheet != physical_sheet:
         print(f"[INFO] Using sheet '{actual_sheet}' (case-insensitive match for '{physical_sheet}')")
-    if sheet_name == "GBDF_MMP":
-        print(f"[INFO] Syncing MMP models from sheet '{actual_sheet}' (--sheet GBDF_MMP)")
     df, edit_column = _get_sheet_df_with_edit_column(excel_path, excel_data, sheet_name, actual_sheet)
     if not edit_column:
         print("[ERROR] Could not find the edit details column")
@@ -736,7 +662,7 @@ def sync_config_from_excel(
     
     from models_config import STATIC_MODELS_CONFIG
     config_by_type = STATIC_MODELS_CONFIG
-    base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "gbdf_mcr")
+    base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "model_1")
     config_updates = []
     
     config_path = str(Path(__file__).resolve().parent / "models_config.py")
@@ -745,20 +671,23 @@ def sync_config_from_excel(
     print(f"{'='*60}\n")
     
     rows_with_ts = 0
-    for idx, row in df.iterrows():
+    work_df = _non_empty_edit_rows(df, edit_column)
+    print(f"[INFO] Scanning {len(work_df)} row(s) with edit details ({len(df)} total sheet rows)")
+    for idx, row in work_df.iterrows():
         edit_string = row.get(edit_column)
-        if pd.isna(edit_string):
-            continue
         edit_str_lower = str(edit_string).lower()
         if "note:" in edit_str_lower and "python main_processor.py" in edit_str_lower:
-            continue
-        if sheet_name == "GBDF_MMP" and not is_mmp_edit(edit_string, "GBDF_MMP"):
             continue
 
         test_suite_id = row.get(ts_id_column, "")
         if pd.isna(test_suite_id) or not str(test_suite_id).strip():
             continue
-        
+
+        ts_dep = _deprecated_test_suite_id(test_suite_id)
+        if ts_dep:
+            print(f"  [SKIP] Row {idx + 2}: deprecated Test Suite ID '{test_suite_id}' ({ts_dep}); use TS## format")
+            continue
+
         rows_with_ts += 1
         ts_match = re.search(r'(\d+)', str(test_suite_id))
         if not ts_match:
@@ -776,13 +705,8 @@ def sync_config_from_excel(
         edit_id = parsed["edit_id"]
         eob_code = parsed["eob_code"]
         model_name_with_lob = parsed["model_name_with_lob"]
-        if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
-            row_model_type = "gbdf_mmp"
-        elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
-            row_model_type = "gbdf_grs"
-        else:
-            row_model_type = base_model_type
-        
+        row_model_type = base_model_type
+
         current_config = config_by_type.get(row_model_type, [])
         existing_entry = None
         for config in current_config:
@@ -838,8 +762,7 @@ def update_cmd_status_from_config(
 ) -> bool:
     """
     Set Cmd status to "Created" in edits_list.xlsx for every row whose (edit_id, eob_code)
-    exists in STATIC_MODELS_CONFIG for that sheet's model type (wgs_csbd, gbdf_mcr, gbdf_grs, wgs_kernal).
-    Previously only gbdf_mcr/gbdf_grs were considered; now all types are included.
+    exists in STATIC_MODELS_CONFIG for that sheet's model type (model_1).
     """
     try:
         from models_config import STATIC_MODELS_CONFIG
@@ -848,7 +771,7 @@ def update_cmd_status_from_config(
         return False
 
     # Build (edit_id, code) sets for all model types in STATIC_MODELS_CONFIG
-    config_model_types = ("wgs_csbd", "gbdf_mcr", "gbdf_grs", "gbdf_mmp", "wgs_kernal")
+    config_model_types = ("model_1",)
     config_pairs = {mt: set() for mt in config_model_types}
     for model_type in config_model_types:
         for entry in STATIC_MODELS_CONFIG.get(model_type, []):
@@ -867,7 +790,7 @@ def update_cmd_status_from_config(
         if MODEL_SHEET_MAPPING.get(name) in config_pairs
     ]
     if not sheets_to_process:
-        print("[INFO] No sheets (WGS_CSBD, GBDF, GBDF_MCR, GBDF_GRS, GBDF_MMP, KERNAL) found in Excel")
+        print("[INFO] No sheets (model_1, C_list) found in Excel")
         return True
 
     updated_count = 0
@@ -878,7 +801,7 @@ def update_cmd_status_from_config(
             continue
         if "Cmd status" not in df.columns:
             continue
-        base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "gbdf_mcr")
+        base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "model_1")
         sheet_updates: List[Dict] = []
         for idx, row in df.iterrows():
             edit_string = row.get(edit_column)
@@ -890,12 +813,7 @@ def update_cmd_status_from_config(
             parsed = parse_edit_string(edit_string, sheet_name=sheet_name)
             if not parsed:
                 continue
-            if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
-                row_model_type = "gbdf_mmp"
-            elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
-                row_model_type = "gbdf_grs"
-            else:
-                row_model_type = base_model_type
+            row_model_type = base_model_type
             if row_model_type not in config_pairs:
                 continue
             edit_id = str(parsed["edit_id"]).strip()
@@ -919,7 +837,7 @@ def update_cmd_status_from_config(
 
 def process_edits_from_excel(
     excel_path: str = "edits_list.xlsx",
-    sheet_name: str = "WGS_CSBD",
+    sheet_name: str = "model_1",
     dry_run: bool = False
 ) -> Tuple[List[Dict], List[Dict], List[Dict]]:
     """
@@ -939,14 +857,11 @@ def process_edits_from_excel(
     
     # Read Excel file
     excel_data = read_edits_list(excel_path)
-    # GBDF_MMP reads from the GBDF sheet; other sheets use their own name
     physical_sheet = _excel_sheet_for_reading(sheet_name)
     actual_sheet = _resolve_sheet_name(excel_data, physical_sheet)
     if actual_sheet is None:
         print(f"[ERROR] Sheet '{physical_sheet}' not found in Excel file (for --sheet {sheet_name})")
         return [], [], []
-    if sheet_name == "GBDF_MMP":
-        print(f"[INFO] Reading MMP models from sheet '{actual_sheet}' (--sheet GBDF_MMP)")
 
     df, edit_column = _get_sheet_df_with_edit_column(excel_path, excel_data, sheet_name, actual_sheet)
     if not edit_column:
@@ -971,23 +886,22 @@ def process_edits_from_excel(
     excel_updates = []
     config_updates = []  # Existing entries to sync ts_number from Excel
 
-    for idx, row in df.iterrows():
+    work_df = _non_empty_edit_rows(df, edit_column)
+    print(f"[INFO] Processing {len(work_df)} row(s) with edit details ({len(df)} total sheet rows)")
+
+    for idx, row in work_df.iterrows():
         edit_string = row.get(edit_column)
-        
-        if pd.isna(edit_string):
-            continue
-        
-        # Skip rows that are just notes (contain "Note:" and command info)
+
         edit_str_lower = str(edit_string).lower()
         if "note:" in edit_str_lower and "python main_processor.py" in edit_str_lower:
-            print(f"\n[SKIP] Row {idx + 1}: Note row (already has command)")
             continue
 
-        # When processing GBDF_MMP, only process rows that are MMP (from GBDF sheet)
-        if sheet_name == "GBDF_MMP" and not is_mmp_edit(edit_string, "GBDF_MMP"):
-            continue
-        
-        # Check if command already exists (warn but still process)
+        if ts_id_column:
+            ts_dep = _deprecated_test_suite_id(row.get(ts_id_column, ""))
+            if ts_dep:
+                print(f"\n[SKIP] Row {idx + 1}: deprecated Test Suite ID ({ts_dep}); use TS## format")
+                continue
+
         cmd_status = row.get("Cmd status", "")
         command_exists = False
         if pd.notna(cmd_status) and str(cmd_status).strip().lower() == "created":
@@ -995,16 +909,9 @@ def process_edits_from_excel(
             print(f"\n[WARNING] Row {idx + 1}: Command already created in Excel")
             print(f"  [INFO] Argument is already in use @edits_list.xlsx")
         
-        # Determine model type for this row (handle GRS/MMP in GBDF sheets)
-        base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "wgs_csbd")
+        base_model_type = MODEL_SHEET_MAPPING.get(sheet_name, "model_1")
         row_model_type = base_model_type
-        if base_model_type == "gbdf_mcr" and is_mmp_edit(edit_string, sheet_name):
-            row_model_type = "gbdf_mmp"
-            print("  [INFO] MMP detected in details; using gbdf_mmp config")
-        elif base_model_type == "gbdf_mcr" and is_grs_edit(edit_string, sheet_name):
-            row_model_type = "gbdf_grs"
-            print("  [INFO] GRS detected in details; using gbdf_grs config")
-        
+
         current_config = config_by_type.get(row_model_type, [])
         used_ts_by_model.setdefault(row_model_type, _get_used_ts_numbers(current_config))
         in_run_reserved_ts_by_model.setdefault(row_model_type, set())
@@ -1047,7 +954,7 @@ def process_edits_from_excel(
                 if ts_match:
                     excel_ts = _normalize_ts_number(ts_match.group(1))
                     if excel_ts and not _ts_numbers_match(existing_ts, excel_ts):
-                        print(f"  [SYNC] Excel has GBDTS{excel_ts}, config has TS{existing_ts} - updating config to match Excel")
+                        print(f"  [SYNC] Excel has TS{excel_ts}, config has TS{existing_ts} - updating config to match Excel")
                         config_updates.append({
                             "model_type": row_model_type,
                             "edit_id": edit_id,
@@ -1267,7 +1174,7 @@ def update_models_config(
     if has_item_model_type:
         grouped_configs = {}
         for item in new_configs:
-            item_model_type = item.get("model_type") or model_type or "wgs_csbd"
+            item_model_type = item.get("model_type") or model_type or "model_1"
             grouped_configs.setdefault(item_model_type, []).append(item)
         
         for grouped_model_type, grouped_items in grouped_configs.items():
@@ -1275,7 +1182,7 @@ def update_models_config(
                 return False
         return True
 
-    return _update_models_config_for_type(new_configs, model_type or "wgs_csbd", config_path)
+    return _update_models_config_for_type(new_configs, model_type or "model_1", config_path)
 
 
 def _update_models_config_for_type(
@@ -1384,7 +1291,7 @@ def update_excel_file(
     Update Excel file with command information by patching only Cmd status and
     Test Suite ID cells. Does not overwrite entire sheets, so formulas
     (e.g. in generate_command or =B2) are preserved.
-    Applies to all sheets including WGS_CSBD (CSBD), KERNAL, and GBDF (GBD).
+    Applies to all sheets including model_1 and C_list.
     """
     if not new_configs:
         return True
@@ -1410,14 +1317,7 @@ def update_excel_file(
             current_val = df.at[row_idx, ts_id_column]
             is_empty = pd.isna(current_val) or not str(current_val).strip()
             if is_empty:
-                if item_model_type == "gbdf_grs":
-                    test_suite_id_val = f"GBDTS{ts_number}"
-                else:
-                    test_suite_id_val = (
-                        f"CSBDTS{ts_number}" if "CSBDTS" in command
-                        else f"GBDTS{ts_number}" if "GBDTS" in command
-                        else f"NYKTS{ts_number}"
-                    )
+                test_suite_id_val = f"TS{ts_number}"
         updates.append({
             "row_index": row_idx,
             "cmd_status": "Created",
@@ -1452,15 +1352,8 @@ def fix_command_mismatch_in_excel(
         if not ts_id_column or "generate_command" not in df.columns:
             continue
         edit_column = _resolve_edit_column(df)
-        if not edit_column and sheet_name in ("GBDF", "GBDF_MCR", "GBDF_GRS", "GBDF_MMP"):
-            try:
-                df_alt = pd.read_excel(excel_path, sheet_name=sheet_name, header=1)
-                edit_column = _resolve_edit_column(df_alt)
-                if edit_column:
-                    df = df_alt
-                    excel_data[sheet_name] = df
-            except Exception:
-                pass
+        if not edit_column:
+            continue
         base_model_type = MODEL_SHEET_MAPPING.get(sheet_name)
         if not base_model_type or "generate_command" not in df.columns:
             continue
@@ -1469,6 +1362,11 @@ def fix_command_mismatch_in_excel(
             test_suite_id = row.get(ts_id_column, "")
             if pd.isna(test_suite_id) or not str(test_suite_id).strip():
                 continue
+            ts_dep = _deprecated_test_suite_id(test_suite_id)
+            if ts_dep:
+                if dry_run:
+                    print(f"  [SKIP] {sheet_name} row {idx + 2}: deprecated Test Suite ID '{test_suite_id}'")
+                continue
             ts_match = re.search(r"(\d+)", str(test_suite_id))
             if not ts_match:
                 continue
@@ -1476,12 +1374,6 @@ def fix_command_mismatch_in_excel(
             if not ts_number:
                 continue
             row_model_type = base_model_type
-            if base_model_type == "gbdf_mcr" and edit_column:
-                edit_string = row.get(edit_column, "")
-                if is_mmp_edit(edit_string, sheet_name):
-                    row_model_type = "gbdf_mmp"
-                elif is_grs_edit(edit_string, sheet_name):
-                    row_model_type = "gbdf_grs"
             correct_command = generate_command(ts_number, row_model_type)
             current = str(row.get("generate_command", "") or "").strip()
             if current != correct_command:
@@ -1619,8 +1511,8 @@ def main():
     parser.add_argument(
         "--sheet",
         type=str,
-        default="WGS_CSBD",
-        help="Excel sheet name to process (default: WGS_CSBD)"
+        default="model_1",
+        help="Excel sheet name to process (default: model_1)"
     )
     parser.add_argument(
         "--excel",
@@ -1651,7 +1543,7 @@ def main():
     parser.add_argument(
         "--fix-cmd-mismatch",
         action="store_true",
-        help="Rewrite generate_command in edits_list.xlsx so each row's command uses that row's Test Suit ID (fixes GBDTS62 vs --GBDTS171 mismatch)"
+        help="Rewrite generate_command in edits_list.xlsx so each row's command uses that row's Test Suit ID"
     )
     
     args = parser.parse_args()
@@ -1663,7 +1555,7 @@ def main():
             print(f"[DRY-RUN] Would update {n} row(s). Run without --dry-run to apply.")
         return
 
-    # Update Cmd status from gbdf_mcr/gbdf_grs config
+    # Update Cmd status from model_1 config
     if args.update_cmd_status:
         update_cmd_status_from_config(
             excel_path=args.excel,
@@ -1727,7 +1619,7 @@ def main():
         return
     
     # Update files
-    model_type = MODEL_SHEET_MAPPING.get(args.sheet, "wgs_csbd")
+    model_type = MODEL_SHEET_MAPPING.get(args.sheet, "model_1")
     config_path = str(Path(__file__).resolve().parent / "models_config.py")
     
     print(f"\n{'='*60}")
@@ -1745,7 +1637,7 @@ def main():
     if config_updates or generated_configs:
         sort_config_by_ts_number(config_path)
     
-    # Update Excel file (use physical sheet: GBDF for GBDF_MMP)
+    # Update Excel file
     update_excel_file(args.excel, _excel_sheet_for_reading(args.sheet), excel_updates)
     
     print(f"\n{'='*60}")

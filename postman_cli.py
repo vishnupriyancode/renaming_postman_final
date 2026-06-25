@@ -37,13 +37,13 @@ Examples:
     python postman_cli.py generate --collection-name "RevenueTestCollection"
     
     # Generate collection for specific directory
-    python postman_cli.py generate --directory "renaming_jsons/CSBDTS/TS_01_REVENUE_WGS_CSBD_rvn001_00W5_payloads_dis"
+    python postman_cli.py generate --directory "renaming_jsons/model_1/Model_01_sample_model_1_M000001_00W04_dis"
     
     # List available directories
     python postman_cli.py list-directories
     
     # Show statistics for a directory
-    python postman_cli.py stats --directory "renaming_jsons/CSBDTS/TS_01_REVENUE_WGS_CSBD_rvn001_00W5_payloads_dis"
+    python postman_cli.py stats --directory "renaming_jsons/model_1/Model_01_sample_model_1_M000001_00W04_dis"
     
     # Generate collections for all directories
     python postman_cli.py generate-all
@@ -119,19 +119,14 @@ def handle_generate(args):
     )
     
     # Stage 14: Choose generation method based on arguments
-    # Use WGS_Kernal meta-transid for all wgs_kernal models (NYKTS / WGS_KERNAL)
-    is_wgs_kernal = bool(
-        (args.directory and ("NYKTS" in args.directory or "WGS_KERNAL" in args.directory.upper() or "WGS_Kernal" in args.directory))
-        or ("NYKTS" in args.collection_name or "WGS_KERNAL" in args.collection_name.upper() or "WGS_Kernal" in args.collection_name)
-    )
     if args.directory:
         # Generate collection for specific directory
         print(f"📁 Generating collection for directory: {args.directory}")
-        collection_path = generator.generate_collection_for_directory(args.directory, is_wgs_kernal=is_wgs_kernal)
+        collection_path = generator.generate_collection_for_directory(args.directory)
     else:
         # Generate collection for all files with custom name
         print(f"📁 Generating collection: {args.collection_name}")
-        collection_path = generator.generate_postman_collection(args.collection_name, is_wgs_kernal=is_wgs_kernal)
+        collection_path = generator.generate_postman_collection(args.collection_name)
     
     # Stage 15: Display results and usage instructions
     if collection_path:

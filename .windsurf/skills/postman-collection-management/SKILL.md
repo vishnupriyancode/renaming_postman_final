@@ -19,17 +19,17 @@ Guide the creation, management, and troubleshooting of Postman collections gener
 ### 1. Basic Collection Generation
 ```bash
 # Generate collection for specific model
-python main_processor.py --wgs_csbd --CSBDTS01
+python main_processor.py --model_1 --CSBDTS01
 
 # Generate without Postman collections
-python main_processor.py --wgs_csbd --CSBDTS01 --no-postman
+python main_processor.py --model_1 --CSBDTS01 --no-postman
 
 # Batch generate for all models
 python main_processor.py --all
 
 # GBDF MMP (Timber GetRecommendations URL; collections under ts_id_model folder)
-python main_processor.py --gbdf_mmp --GBDTS66
-python main_processor.py --gbdf_mmp --all
+python main_processor.py --model_1 --GBDTS66
+python main_processor.py --model_1 --all
 ```
 
 ### 2. Collection Structure
@@ -105,7 +105,7 @@ postman_collections/[Category]/
 ## Advanced Features
 
 ### 1. Dynamic Data Handling
-- Random data generation for WGS_CSBD models
+-- Random data generation for MODEL_1 models
 - KEY_CHK_DCN_NBR generation (11-digit random)
 - Header/footer transformations
 - GBDF MMP: Postman uses Timber GetRecommendations URL; collections stored under ts_id_model folder

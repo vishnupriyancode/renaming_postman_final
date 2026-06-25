@@ -14,7 +14,7 @@ trigger: model_decision
 - Load environment via `python-dotenv` from project root: `load_dotenv(dotenv_path=Path(__file__).parent / '.env')`.
 
 ## CLI and Configuration
-- Use `argparse` for CLI; category and TS model as primary args (e.g. `--wgs_csbd --CSBDTS49`).
+-- Use `argparse` for CLI; category and TS model as primary args (e.g. `--model_1 --CSBDTS49`).
 - Feature flags and options from `.env`: e.g. `ENABLE_REPORT_GENERATION`, `ENABLE_POSTMAN_*`. Default to `'true'` and check with `.lower() in ('true', '1', 'yes', 'on')`.
 - Optional modules (e.g. report_generate): import in try/except and guard usage with env or availability checks.
 
@@ -28,6 +28,6 @@ trigger: model_decision
 - Use existing `TimingTracker` and report generators for timing; keep console output actionable for debugging.
 
 ## Naming and Conventions
-- Model identifiers: WGS_CSBD (CSBDTS), WGS_NYK (NYKTS), GBDF MCR/GRS/MMP (GBDTS). Use exact prefixes (NYKTS not TS for NYK).
+- Model identifiers: model_1 (CSBDTS), WGS_NYK (NYKTS), GBDF MCR/GRS/MMP (GBDTS). Use exact prefixes (NYKTS not TS for NYK).
 - Normalize TS numbers via `dynamic_models.normalize_ts_number()`; paths must include `/payloads/` (smoke or regression).
 - Do not change suffix mapping: deny→LR, bypass→NR, exclusion→EX without updating postman_generator and docs.

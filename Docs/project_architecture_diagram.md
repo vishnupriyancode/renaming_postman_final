@@ -155,7 +155,7 @@
 
 ```
 renaming_files/                           # Project root
-├── 📁 WGS_CSBD/                         # Source TS folders (and WGS_KERNAL, GBDF_*)
+├── 📁 model_1/                         # Source TS folders (and model_4, GBDF_*)
 │   ├── TS_*_*/sur/regression/ | smoke/
 │   └── ... (other TS folders)
 │
@@ -194,14 +194,14 @@ renaming_files/                           # Project root
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
 │  # Main Processor Commands                                                      │
-│  python main_processor.py --wgs_csbd --CSBDTS01     # Process TS01 WGS_CSBD   │
-│  python main_processor.py --wgs_csbd --CSBDTS07     # Process TS07 WGS_CSBD   │
-│  python main_processor.py --gbdf_mcr --GBDTS47      # Process TS47 GBDF MCR   │
-│  python main_processor.py --gbdf_grs --TS139        # Process TS139 GBDF GRS  │
+│  python main_processor.py --model_1 --CSBDTS01     # Process TS01 model_1   │
+│  python main_processor.py --model_1 --CSBDTS07     # Process TS07 model_1   │
+│  python main_processor.py --model_1 --GBDTS47      # Process TS47 GBDF MCR   │
+│  python main_processor.py --model_1 --GBDTS139     # Process TS139 GBDF GRS  │
 │  python main_processor.py --wgs_nyk --NYKTS130       # Process TS130 WGS_NYK   │
-│  python main_processor.py --wgs_csbd --all          # Process all WGS_CSBD    │
+│  python main_processor.py --model_1 --all          # Process all model_1    │
 │  python main_processor.py --list                    # List available models   │
-│  python main_processor.py --wgs_csbd --CSBDTS46 --refdb  # RefDB value replace │
+│  python main_processor.py --model_1 --CSBDTS46 --refdb  # RefDB value replace │
 │  python main_processor.py --wgs_nyk --NYKTS123 --refdb   # RefDB (WGS_NYK)    │
 │                                                                                 │
 │  # Postman CLI Commands                                                         │

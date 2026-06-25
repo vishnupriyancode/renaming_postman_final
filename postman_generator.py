@@ -5,19 +5,12 @@ Used by main_processor.py, rename_files.py, and postman_cli.py.
 """
 
 import json
-import os
 import re
 from pathlib import Path
 
 
-# Default meta-transid: WGS_Kernal vs WGS_CSBD (see rename_files.apply_wgs_csbd_header_footer)
-META_TRANSID_WGS_CSBD = "20220117181853TMBL20359Cl893580999"
-META_TRANSID_WGS_KERNAL = "20240705012036TMBLMMY437A003580999CS90TIMBER01"
+META_TRANSID_MODEL_1 = "20220117181853TMBL20359Cl893580999"
 META_SRC_ENVRMT = "IMSH"
-
-# MMP models use Timber GetRecommendations endpoint
-MMP_BASE_URL_DEFAULT = "https://pi-timber-claims-api-uat.ingress-nginx.dig-gld-shared.gcpdns.internal.das"
-MMP_PATH = "claims/Timber/GetRecommendations"
 
 
 class PostmanCollectionGenerator:
@@ -27,8 +20,8 @@ class PostmanCollectionGenerator:
         self.source_dir = Path(source_dir) if source_dir else None
         self.output_dir = Path(output_dir) if output_dir else Path("postman_collections")
 
-    def _default_meta_transid(self, is_wgs_kernal=False):
-        return META_TRANSID_WGS_KERNAL if is_wgs_kernal else META_TRANSID_WGS_CSBD
+    def _default_meta_transid(self):
+        return META_TRANSID_MODEL_1
 
     def _collect_json_files(self, directory=None):
         """Collect all .json files under directory (default: self.source_dir)."""
@@ -41,15 +34,15 @@ class PostmanCollectionGenerator:
                 files.append(path)
         return sorted(files)
 
-    def _build_request_headers(self, json_data, is_gbdf_model=False, is_wgs_kernal=False):
-        """Build Postman request headers; use meta-transid from file or default by model type."""
+    def _build_request_headers(self, json_data):
+        """Build Postman request headers; use meta-transid from file or default."""
         meta_transid = (
             json_data.get("meta-transid")
             if isinstance(json_data, dict)
             else None
         )
         if not meta_transid:
-            meta_transid = self._default_meta_transid(is_wgs_kernal)
+            meta_transid = self._default_meta_transid()
         meta_src = (
             json_data.get("meta-src-envrmt", META_SRC_ENVRMT)
             if isinstance(json_data, dict)
@@ -61,20 +54,10 @@ class PostmanCollectionGenerator:
             {"key": "meta-src-envrmt", "value": meta_src, "type": "text"},
         ]
 
-    def generate_postman_collection(
-        self,
-        collection_name,
-        custom_filename=None,
-        is_gbdf_model=False,
-        is_wgs_kernal=False,
-        is_gbdf_mmp=False,
-        gbdf_collection_folder=None,
-    ):
+    def generate_postman_collection(self, collection_name, custom_filename=None, **_kwargs):
         """
         Generate a single Postman collection from all JSON files in self.source_dir.
         Returns the path to the written collection file, or None on failure.
-        When is_gbdf_mmp is True, request URL uses claims/Timber/GetRecommendations.
-        When gbdf_collection_folder is set (e.g. TS66_RULE00000022_model_name), collection is stored under that folder for GBD models.
         """
         if not self.source_dir or not self.source_dir.exists():
             return None
@@ -87,39 +70,17 @@ class PostmanCollectionGenerator:
             collection_name=collection_name,
             json_files=json_files,
             output_filename=filename,
-            is_gbdf_model=is_gbdf_model,
-            is_wgs_kernal=is_wgs_kernal,
-            is_gbdf_mmp=is_gbdf_mmp,
-            gbdf_collection_folder=gbdf_collection_folder,
         )
 
-    def _write_collection(
-        self,
-        collection_name,
-        json_files,
-        output_filename,
-        is_gbdf_model=False,
-        is_wgs_kernal=False,
-        is_gbdf_mmp=False,
-        gbdf_collection_folder=None,
-    ):
-        """Build Postman collection dict and write to output_dir / collection_folder / output_filename. For GBD models, collection_folder can be ts_id_model (e.g. TS66_RULE00000022_model_name)."""
-        # Use output filename stem as collection display name so imported collection shows e.g. covid_wgs_csbd_RULEEM000001_W04_regression
+    def _write_collection(self, collection_name, json_files, output_filename, collection_folder=None):
+        """Build Postman collection dict and write to output_dir / collection_folder / output_filename."""
         display_name = Path(output_filename).stem if output_filename else collection_name
-        # MMP models use Timber GetRecommendations endpoint
-        if is_gbdf_mmp:
-            url_raw = "{{baseUrl}}/claims/Timber/GetRecommendations"
-            url_path = ["claims", "Timber", "GetRecommendations"]
-            base_url_default = MMP_BASE_URL_DEFAULT
-            variables = [{"key": "baseUrl", "value": base_url_default, "type": "string"}]
-        else:
-            url_raw = "{{baseUrl}}/api/validate/{{tc_id}}"
-            url_path = ["api", "validate", "{{tc_id}}"]
-            base_url_default = "http://localhost:3000"
-            variables = [
-                {"key": "baseUrl", "value": base_url_default, "type": "string"},
-                {"key": "tc_id", "value": "", "type": "string"},
-            ]
+        url_raw = "{{baseUrl}}/api/validate/{{tc_id}}"
+        url_path = ["api", "validate", "{{tc_id}}"]
+        variables = [
+            {"key": "baseUrl", "value": "http://localhost:3000", "type": "string"},
+            {"key": "tc_id", "value": "", "type": "string"},
+        ]
         items = []
         for jpath in json_files:
             try:
@@ -128,7 +89,7 @@ class PostmanCollectionGenerator:
             except (json.JSONDecodeError, OSError):
                 continue
             name = jpath.stem
-            headers = self._build_request_headers(data, is_gbdf_model, is_wgs_kernal)
+            headers = self._build_request_headers(data)
             raw_body = json.dumps(data, indent=2, ensure_ascii=False)
             request = {
                 "method": "POST",
@@ -152,18 +113,18 @@ class PostmanCollectionGenerator:
             "variable": variables,
         }
 
-        if gbdf_collection_folder:
-            collection_folder = re.sub(r"[^\w\-]", "_", gbdf_collection_folder).strip("_")
+        if collection_folder:
+            folder_name = re.sub(r"[^\w\-]", "_", collection_folder).strip("_")
         else:
-            collection_folder = re.sub(r"[^\w\-]", "_", display_name).strip("_")
-        out_dir = self.output_dir / collection_folder
+            folder_name = re.sub(r"[^\w\-]", "_", display_name).strip("_")
+        out_dir = self.output_dir / folder_name
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / output_filename
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(collection, f, indent=2, ensure_ascii=False)
         return str(out_path)
 
-    def generate_collection_for_directory(self, directory, is_wgs_kernal=False):
+    def generate_collection_for_directory(self, directory):
         """Generate a collection for a specific directory. Returns path to collection file or None."""
         if not directory:
             return None
@@ -182,12 +143,10 @@ class PostmanCollectionGenerator:
             collection_name=collection_name,
             json_files=json_files,
             output_filename=filename,
-            is_gbdf_model=False,
-            is_wgs_kernal=is_wgs_kernal,
         )
 
     def generate_all_collections(self):
-        """Generate collections for all directories under source_dir that contain JSON files. Returns dict name -> path."""
+        """Generate collections for all directories under source_dir that contain JSON files."""
         if not self.source_dir or not self.source_dir.exists():
             return {}
         results = {}
@@ -207,8 +166,6 @@ class PostmanCollectionGenerator:
                 collection_name=name,
                 json_files=json_files,
                 output_filename=f"{slug}.json",
-                is_gbdf_model="GBDF" in key,
-                is_wgs_kernal=bool(re.search(r"WGS_KERNAL|WGS_Kernal|NYKTS|WGS_NYK", key)),
             )
             if out_path:
                 results[name] = out_path
@@ -225,7 +182,7 @@ class PostmanCollectionGenerator:
         return sorted(dirs)
 
     def get_directory_stats(self, directory):
-        """Return stats for a directory: total_files, file_types, edit_ids, eob_codes, suffixes, or error."""
+        """Return stats for a directory."""
         if not directory:
             return {"error": "No directory specified"}
         dir_path = Path(directory)
@@ -242,9 +199,8 @@ class PostmanCollectionGenerator:
         for p in json_files:
             suffixes.add(p.suffix)
             stem = p.stem
-            # Try to extract edit_id and eob_code from patterns like TC#01#EDIT#00W26#LR
             parts = re.split(r"[#_]", stem)
-            for i, part in enumerate(parts):
+            for part in parts:
                 if part and re.match(r"^[A-Z0-9]{6,}$", part) and "TC" not in part.upper():
                     edit_ids.add(part)
                 if re.match(r"^00W\d{2}$", part):
@@ -258,7 +214,7 @@ class PostmanCollectionGenerator:
         }
 
     def validate_collection(self, collection_path):
-        """Validate a Postman collection file. Returns dict with valid, errors, warnings, stats."""
+        """Validate a Postman collection file."""
         path = Path(collection_path)
         result = {"valid": False, "errors": [], "warnings": [], "stats": {}}
         if not path.exists():

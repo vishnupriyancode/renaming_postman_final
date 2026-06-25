@@ -5,71 +5,39 @@ import os
 import json
 from dynamic_models import discover_ts_folders, get_model_by_ts_number, get_all_models
 
+
 # Static model configurations (for backward compatibility)
 STATIC_MODELS_CONFIG = {
-    "wgs_csbd": [
+    "model_1": [
         {
             "ts_number": "01",
-            "edit_id": "01",
-            "code": "00",
-            "source_dir": "source_folder/WGS_CSBD/CSBDTS_01_sample_WGS_CSBD_M000001_00W04_sur/payloads/regression",
-            "dest_dir": "renaming_jsons/CSBDTS/CSBDTS_01_sample_WGS_CSBD_M000001_00W04_dis/payloads/regression",
+            "edit_id": "M000001",
+            "code": "00W04",
+            "source_dir": "source_folder/Model/Model_01_sample_model_1_M000001_00W04_sur/payloads",
+            "dest_dir": "renaming_jsons/Model/Model_01_sample_model_1_M000001_00W04_dis/payload",
             "postman_collection_name": "TS_01_sample_Collection",
-            "postman_file_name": "sample_wgs_csbd_M000001_00W04.json"
-        }
-    ],
-    "gbdf_mcr": 
-    [    {
-        "ts_number": "46",
-        "edit_id": "RULEEM000001",
-        "code": "v04",
-        "source_dir": "source_folder/GBDF/GBDTS_46_Covid_gbd_mcr_RULEEM000001_v04_sur/payloads/regression",
-        "dest_dir": "renaming_jsons/GBDTS/GBDTS_46_Covid_gbd_mcr_RULEEM000001_v04_dis/payloads/regression",
-        "postman_collection_name": "GBDTS_46_Covid_Collection",
-        "postman_file_name": "covid_model_gbdf_mcr_RULEEM000001_v04.json"
-    }
-],
-"gbdf_grs": [    
-    {
-        "ts_number": "47",
-        "edit_id": "RULEEM000001",
-        "code": "v04",
-        "source_dir": "source_folder/GBDF/TS_47_Covid_gbd_grs_RULEEM000001_v04_sur/payloads/regression",
-        "dest_dir": "renaming_jsons/GBDTS/TS_47_sample_sampple_RULEEM000001_v04_dis/payloads/regression",
-        "postman_collection_name": "TS_47_Covid_Collection",
-        "postman_file_name": "sample_model_gbdf_grs_RULEEM000001_v04.json"
-    }
-    ],
-    "gbdf_mmp": [   
+            "postman_file_name": "sample_model_1_M000001_00W04.json"
+        },
         {
-        "ts_number": "64",
-        "edit_id": "Ambulance Mileage without Base Transport Paid IPREP 192",
-        "code": "v37",
-        "source_dir": "source_folder/GBDF/sample Mileage without Base Transport Paid IPREP 192_v37_sur/payloads/regression",
-        "dest_dir": "renaming_jsons/GBDTS/GBDTS_64_Gbdf_gbd_mmp_Ambulance Mileage without Base Transport Paid IPREP 192_v37_dis/payloads/regression",
-        "postman_collection_name": "GBDTS_64_Gbdf_Collection",
-        "postman_file_name": "gbdf_mmp_shadow_ruleambu000001_grs_v37_edits_group9_Ambulance Mileage without Base Transport Paid IPREP 192_v37.json"
-    }
-    ],
-    "wgs_kernal": [
-        {
-            "ts_number": "100",
-            "edit_id": "RULEPREV000001",
-            "code": "00W28",
-            "source_dir": "source_folder/WGS_Kernal/sample_100_Preventative_WGS_NYK_RULEPREV000001_00W28_sur/payloads/regression",
-            "dest_dir": "renaming_jsons/NYKTS/sample_100_Preventative_WGS_NYK_RULEPREV000001_00W28_dis/payloads/regression",
-            "postman_collection_name": "sample_100_Preventative_Collection",
-            "postman_file_name": "preventative_medicine_and_screening_iprep_362_wgs_nyk_RULEPREV000001_00W28.json"
+            "ts_number": "02",
+            "edit_id": "00001",
+            "code": "00W00",
+            "source_dir": "source_folder/model_1/Model_02_Model_model_1_00001_00W00_sur/payloads/regression",
+            "dest_dir": "renaming_jsons/model_1/Model_02_Model_model_1_00001_00W00_dis/payloads/regression",
+            "postman_collection_name": "Model_02_Model_Collection",
+            "postman_file_name": "model_1_sample_model_cba_dfg_m1_001_00001_00W00.json"
         }
     ]
 }
+
+
 
 
 def _expand_config_list_with_smoke(config_list):
     """
     For each config whose source_dir/dest_dir point to .../payloads/regression,
     if .../payloads/smoke exists on disk, add a matching smoke config so smoke
-    collections are renamed for GBDF (MCR/GRS/MMP) and other payloads-based models.
+    collections are renamed for payloads-based models.
     """
     if not config_list:
         return config_list
@@ -118,114 +86,37 @@ def _merge_static_models(discovered_models, static_key):
 
 
 # Dynamic model discovery
-def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbd_mcr=False, use_gbd_grs=False, use_gbd_mmp=False, use_wgs_nyk=False):
+def get_models_config(use_dynamic=True, use_model_1_destination=False):
     """
     Get model configurations using dynamic discovery or static config.
     When using dynamic discovery, static config (e.g. models added from Excel) is
-    merged in so that python main_processor.py --wgs_csbd --CSBDTSxx etc. work
+    merged in so that python main_processor.py --model_1 --TSxx etc. work
     for any model in the config list.
 
     Args:
         use_dynamic: If True, use dynamic discovery; if False, use static config
-        use_wgs_csbd_destination: If True, use WGS_CSBD as destination folder instead of renaming_jsons
-        use_gbd_mcr: If True, use GBDF MCR models instead of WGS_CSBD
-        use_gbd_grs: If True, use GBDF GRS models instead of WGS_CSBD
-        use_gbd_mmp: If True, use GBDF MMP models instead of WGS_CSBD
-        use_wgs_nyk: If True, use WGS_NYK models instead of WGS_CSBD
+        use_model_1_destination: If True, use model_1 as destination folder instead of renaming_jsons
 
     Returns:
         List of model configurations
     """
+    # Only support model_1. Dynamic discovery
+    # looks for TS folders under "source_folder/model_1" and merges any static
+    # config entries for "model_1".
     if use_dynamic:
         try:
-            if use_wgs_nyk:
-                # Use dynamic discovery for WGS_NYK
-                discovered_models = discover_ts_folders("source_folder/WGS_Kernal", False)
-                merged = _merge_static_models(discovered_models, "wgs_kernal")
-                if discovered_models:
-                    print(f"Dynamic discovery found {len(discovered_models)} WGS_NYK models")
-                if not discovered_models:
-                    print("No WGS_NYK models found via dynamic discovery, using static config")
-                return merged
-            elif use_gbd_mcr:
-                # Use dynamic discovery for GBDF MCR
-                discovered_models = discover_ts_folders("source_folder/GBDF", False)
-                # Filter for MCR models only (exclude GRS)
-                mcr_models = [
-                    m for m in discovered_models 
-                    if ("gbdf_mcr" in m.get("source_dir", "").lower() or "gbd_mcr" in m.get("source_dir", "").lower()
-                        or "gbdf_mcr" in m.get("folder_name", "").lower() or "gbd_mcr" in m.get("folder_name", "").lower())
-                    and "gbdf_grs" not in m.get("source_dir", "").lower()
-                    and "gbd_grs" not in m.get("source_dir", "").lower()
-                    and "gbdf_grs" not in m.get("folder_name", "").lower()
-                    and "gbd_grs" not in m.get("folder_name", "").lower()
-                ]
-                merged = _merge_static_models(mcr_models, "gbdf_mcr")
-                if mcr_models:
-                    print(f"Dynamic discovery found {len(mcr_models)} GBDF MCR models")
-                if not mcr_models:
-                    print("No GBDF MCR models found via dynamic discovery, using static config")
-                return merged
-            elif use_gbd_grs:
-                # Use dynamic discovery for GBDF GRS
-                discovered_models = discover_ts_folders("source_folder/GBDF", False)
-                grs_models = [
-                    m for m in discovered_models 
-                    if "gbdf_grs" in m.get("source_dir", "").lower() or "gbd_grs" in m.get("source_dir", "").lower()
-                    or "gbdf_grs" in m.get("folder_name", "").lower() or "gbd_grs" in m.get("folder_name", "").lower()
-                ]
-                merged = _merge_static_models(grs_models, "gbdf_grs")
-                if grs_models:
-                    print(f"Dynamic discovery found {len(grs_models)} GBDF GRS models")
-                if not grs_models:
-                    print("No GBDF GRS models found via dynamic discovery, using static config")
-                return merged
-            elif use_gbd_mmp:
-                # Use dynamic discovery for GBDF MMP
-                discovered_models = discover_ts_folders("source_folder/GBDF", False)
-                mmp_models = [
-                    m for m in discovered_models
-                    if ("gbdf_mmp" in m.get("source_dir", "").lower() or "gbd_mmp" in m.get("source_dir", "").lower()
-                        or "gbdf_mmp" in m.get("folder_name", "").lower() or "gbd_mmp" in m.get("folder_name", "").lower())
-                ]
-                merged = _merge_static_models(mmp_models, "gbdf_mmp")
-                if mmp_models:
-                    print(f"Dynamic discovery found {len(mmp_models)} GBDF MMP models")
-                if not mmp_models:
-                    print("No GBDF MMP models found via dynamic discovery, using static config")
-                return merged
-            else:
-                # Use dynamic discovery for WGS_CSBD
-                discovered_models = discover_ts_folders("source_folder/WGS_CSBD", True)
-                merged = _merge_static_models(discovered_models, "wgs_csbd")
-                if discovered_models:
-                    print(f"Dynamic discovery found {len(discovered_models)} WGS_CSBD models")
-                if not discovered_models:
-                    print("No WGS_CSBD models found via dynamic discovery, using static config")
-                return merged
+            discovered_models = discover_ts_folders("source_folder/model_1", True)
+            merged = _merge_static_models(discovered_models, "model_1")
+            if discovered_models:
+                print(f"Dynamic discovery found {len(discovered_models)} model_1 models")
+            if not discovered_models:
+                print("No model_1 models found via dynamic discovery, using static config")
+            return merged
         except Exception as e:
             print(f"Dynamic discovery failed: {e}, falling back to static config")
-            if use_wgs_nyk:
-                return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("wgs_kernal", []))
-            elif use_gbd_mcr:
-                return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_mcr", []))
-            elif use_gbd_grs:
-                return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_grs", []))
-            elif use_gbd_mmp:
-                return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_mmp", []))
-            else:
-                return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("wgs_csbd", []))
+            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("model_1", []))
     else:
-        if use_wgs_nyk:
-            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("wgs_kernal", []))
-        elif use_gbd_mcr:
-            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_mcr", []))
-        elif use_gbd_grs:
-            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_grs", []))
-        elif use_gbd_mmp:
-            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("gbdf_mmp", []))
-        else:
-            return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("wgs_csbd", []))
+        return _expand_config_list_with_smoke(STATIC_MODELS_CONFIG.get("model_1", []))
 
 def get_model_by_ts(ts_number):
     """
@@ -238,7 +129,7 @@ def get_model_by_ts(ts_number):
         Model configuration dict or None if not found
     """
     try:
-        return get_model_by_ts_number(ts_number, "source_folder/WGS_CSBD")
+        return get_model_by_ts_number(ts_number, "source_folder/model_1")
     except Exception as e:
         print(f"Error getting model for TS_{ts_number}: {e}")
         return None
@@ -254,7 +145,7 @@ GENERATE_POSTMAN_COLLECTIONS = True
 VERBOSE_OUTPUT = True
 
 
-def apply_header_footer_to_json(file_path, is_wgs_kernal=False):
+def apply_header_footer_to_json(file_path, is_model_4=False):
     """
     Apply header and footer structure to JSON files.
     Wraps the existing JSON content with header and footer metadata.
@@ -271,13 +162,11 @@ def apply_header_footer_to_json(file_path, is_wgs_kernal=False):
     Footer structure:
     - responseRequired: "false"
     - meta-src-envrmt: "IMST"
-    - meta-transid: WGS_Kernal uses "20240705012036TMBLMMY437A003580999CS90TIMBER01",
-                   WGS_CSBD uses "20220117181853TMBL20359Cl893580999"
-    - protegrity / Protigrity: "false" (for WGS_Kernal and WGS_CSBD models)
+    - meta-transid: "20220117181853TMBL20359Cl893580999" for model_1
     
     Args:
         file_path: Path to the JSON file to transform
-        is_wgs_kernal: If True, use WGS_Kernal meta-transid; else use WGS_CSBD meta-transid
+        is_model_4: Unused; kept for backward compatibility
         
     Returns:
         bool: True if transformation was successful, False otherwise
@@ -295,8 +184,7 @@ def apply_header_footer_to_json(file_path, is_wgs_kernal=False):
                                 "meta-src-envrmt" in existing_data and
                                 "meta-transid" in existing_data)
         
-        # meta-transid: WGS_Kernal uses dedicated value; WGS_CSBD uses legacy value
-        meta_transid = "20240705012036TMBLMMY437A003580999CS90TIMBER01" if is_wgs_kernal else "20220117181853TMBL20359Cl893580999"
+        meta_transid = "20220117181853TMBL20359Cl893580999"
         # Header and footer structure (always use these values)
         header_footer = {
             "adhoc": "true",
@@ -365,11 +253,10 @@ def apply_header_footer_to_json(file_path, is_wgs_kernal=False):
 def apply_header_footer_to_renaming_jsons():
     """
     Apply header and footer to all JSON files in renaming_jsons folder
-    for WGS_CSBD and WGS_Kernal models.
+    for model_1.
     
     This function recursively finds all JSON files in:
-    - renaming_jsons/CSBDTS/**
-    - renaming_jsons/NYKTS/**
+    - renaming_jsons/model_1/**
     
     and applies the header/footer structure to each file.
     
@@ -381,10 +268,9 @@ def apply_header_footer_to_renaming_jsons():
     skipped_count = 0
     error_count = 0
     
-    # Directories to process
+    # Directories to process (model_1 only)
     target_dirs = [
-        os.path.join(base_dir, "WGS_CSBD"),
-        os.path.join(base_dir, "WGS_KERNAL")
+        os.path.join(base_dir, "model_1")
     ]
     
     print("=" * 60)
@@ -400,14 +286,13 @@ def apply_header_footer_to_renaming_jsons():
         print("-" * 60)
         
         # Recursively find all JSON files
-        is_wgs_kernal = "WGS_KERNAL" in target_dir.upper()
         for root, dirs, files in os.walk(target_dir):
             for filename in files:
                 if filename.endswith('.json'):
                     file_path = os.path.join(root, filename)
                     
                     # Apply header/footer (function will handle both new and existing structures)
-                    if apply_header_footer_to_json(file_path, is_wgs_kernal=is_wgs_kernal):
+                    if apply_header_footer_to_json(file_path):
                         processed_count += 1
                     else:
                         error_count += 1
@@ -430,10 +315,10 @@ def apply_header_footer_to_renaming_jsons():
 # Main section - allows running this script directly to apply header/footer
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("Header/Footer Application for WGS_CSBD and WGS_Kernal Models")
+    print("Header/Footer Application for model_1")
     print("=" * 60)
     print("\nThis script will apply header and footer structure to all JSON files")
-    print("in renaming_jsons/WGS_CSBD and renaming_jsons/WGS_KERNAL directories.\n")
+    print("in renaming_jsons/model_1 directories.\n")
     
     # Apply header/footer to all JSON files
     stats = apply_header_footer_to_renaming_jsons()

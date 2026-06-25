@@ -141,7 +141,7 @@ def process_model(model_config, generate_postman=True):
 **Key Functions**:
 - **Pattern Recognition**: Uses regex to identify TS folder patterns
 - **Model Extraction**: Extracts edit IDs, codes, and metadata from folder names
-- **Flexible Discovery**: Supports both WGS_CSBD and GBDF model types
+- **Flexible Discovery**: Supports both model_1 and GBDF model types
 - **Normalization**: Handles different TS number formats (01, 1, 001)
 
 **Connections**:
@@ -151,7 +151,7 @@ def process_model(model_config, generate_postman=True):
 **Key Code Sections**:
 ```python
 # Main discovery function
-def discover_ts_folders(base_dir=".", use_wgs_csbd_destination=False):
+def discover_ts_folders(base_dir=".", use_model_1_destination=False):
     # Pattern matching and model extraction
     # Returns list of model configurations
 
@@ -182,15 +182,15 @@ def get_model_by_ts_number(ts_number, base_dir="."):
 from dynamic_models import discover_ts_folders, get_model_by_ts_number
 
 # Configuration loading with fallback
-def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbdf_mcr=False):
+def get_models_config(use_dynamic=True, use_model_1_destination=False, use_model_2=False):
     if use_dynamic:
         # Try dynamic discovery first
-        discovered_models = discover_ts_folders("source_folder/WGS_CSBD", use_wgs_csbd_destination)
+        discovered_models = discover_ts_folders("source_folder/model_1", use_model_1_destination)
         if discovered_models:
             return discovered_models
         else:
             # Fallback to static config
-            return STATIC_MODELS_CONFIG.get("wgs_csbd", [])
+            return STATIC_MODELS_CONFIG.get("model_1", [])
 ```
 
 ---
@@ -201,8 +201,8 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbdf
 
 **Key Functions**:
 - **File Renaming**: Converts JSON files from old format to new naming convention
-- **Header/Footer Transformation**: Applies header/footer structure for WGS_CSBD files
-- **KEY_CHK_CDN_NBR Generation**: Generates random 11-digit numbers for WGS_CSBD files
+- **Header/Footer Transformation**: Applies header/footer structure for model_1 files
+- **KEY_CHK_CDN_NBR Generation**: Generates random 11-digit numbers for model_1 files
 - **Model Information Extraction**: Extracts model details from directory structure
 - **File Operations**: Moves and organizes files to destination directories
 
@@ -216,7 +216,7 @@ def get_models_config(use_dynamic=True, use_wgs_csbd_destination=False, use_gbdf
 # Main renaming function
 def rename_files(edit_id, code, source_dir, dest_dir, generate_postman=True):
     # File renaming logic
-    # Header/footer transformation for WGS_CSBD
+    # Header/footer transformation for model_1
     # KEY_CHK_CDN_NBR generation
     # File moving operations
 
@@ -234,7 +234,7 @@ def extract_model_info_from_directory(dest_dir, renamed_files):
 **Key Functions**:
 - **Collection Generation**: Creates Postman v2.1.0 format collections
 - **Request Creation**: Converts JSON files into API requests
-- **Header Management**: Applies appropriate headers for WGS_CSBD vs GBDF models
+- **Header Management**: Applies appropriate headers for model_1 vs GBDF models
 - **Validation**: Validates generated collections
 
 **Connections**:
@@ -246,7 +246,7 @@ def extract_model_info_from_directory(dest_dir, renamed_files):
 class PostmanCollectionGenerator:
     def generate_postman_collection(self, collection_name, custom_filename=None, is_gbdf_model=False):
         # Create Postman collection from JSON files
-        # Handle different model types (WGS_CSBD vs GBDF)
+        # Handle different model types (model_1 vs GBDF)
         
     def _create_postman_request(self, json_file_path, parsed_info, is_gbdf_model=False):
         # Convert JSON file to Postman request
@@ -329,7 +329,7 @@ def handle_generate(args):
 
 ### **Example 1: Complete Workflow (Most Common)**
 ```bash
-python main_processor.py --wgs_csbd --CSBDTS01
+python main_processor.py --model_1 --CSBDTS01
 ```
 
 **Flow Diagram**:
@@ -352,7 +352,7 @@ User Command
 **Step-by-Step Process**:
 1. **`main_processor.py`** starts and parses CLI arguments
 2. **`models_config.py`** loads configuration using dynamic discovery
-3. **`dynamic_models.py`** scans `source_folder/WGS_CSBD/` for TS01 folders
+3. **`dynamic_models.py`** scans `source_folder/model_1/` for TS01 folders
 4. **`rename_files.py`** processes files (renames, moves, transforms headers/footers)
 5. **`excel_report_generator.py`** tracks timing for operations
 6. **`postman_generator.py`** creates Postman collection
@@ -363,7 +363,7 @@ User Command
 
 ### **Example 2: Batch Processing**
 ```bash
-python main_processor.py --wgs_csbd --all
+python main_processor.py --model_1 --all
 ```
 
 **Flow Diagram**:
@@ -384,7 +384,7 @@ User Command
 ```
 
 **Step-by-Step Process**:
-1. **`main_processor.py`** discovers all WGS_CSBD models
+1. **`main_processor.py`** discovers all model_1 models
 2. **`dynamic_models.py`** finds all TS folders matching patterns
 3. **`models_config.py`** provides configurations for each model
 4. **`main_processor.py`** processes each model sequentially
@@ -472,7 +472,7 @@ from postman_generator import PostmanCollectionGenerator
 ### **For Your Demo, Emphasize**:
 
 1. **🔄 Automation**: The system automatically discovers models without manual configuration
-2. **🎯 Flexibility**: Supports both WGS_CSBD and GBDF model types
+2. **🎯 Flexibility**: Supports both model_1 and GBDF model types
 3. **📁 File Processing**: Converts files from old naming to new standardized format
 4. **🚀 API Testing**: Generates ready-to-use Postman collections
 5. **🛠️ CLI Interface**: User-friendly command-line interface for all operations
@@ -483,10 +483,10 @@ from postman_generator import PostmanCollectionGenerator
 python main_processor.py --list
 
 # Process a specific model
-python main_processor.py --wgs_csbd --TS01
+python main_processor.py --model_1 --TS01
 
 # Process all models
-python main_processor.py --wgs_csbd --all
+python main_processor.py --model_1 --all
 
 # Standalone Postman operations
 python postman_cli.py list-directories
@@ -527,7 +527,7 @@ python postman_cli.py generate --collection-name "DemoCollection"
 
 ### **Live Demo (5 minutes)**:
 1. Show model discovery: `python main_processor.py --list`
-2. Process a model: `python main_processor.py --wgs_csbd --CSBDTS01`
+2. Process a model: `python main_processor.py --model_1 --CSBDTS01`
 3. Show generated files, Postman collection, and Excel timing report
 4. Demonstrate standalone Postman operations
 

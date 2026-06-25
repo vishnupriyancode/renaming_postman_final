@@ -7,41 +7,41 @@ description: Add and configure new healthcare models in the test-case automation
 
 ## Purpose
 Guide the process of adding new healthcare models to the automation system, including configuration setup, testing, and deployment.
-
-## When to Use
-- Adding new WGS_CSBD, WGS_NYK, GBDF MCR, GBDF GRS, or GBDF MMP models
+### 1. model_1 Models
+**Command Format:** `--model_1 --CSBDTS[XX]`
+- Adding new model_1, WGS_NYK, GBDF MCR, GBDF GRS, or GBDF MMP models
 - Updating existing model configurations
 - Troubleshooting model discovery issues
-- Setting up model-specific behaviors
-
+### 3. GBDF MCR Models
+**Command Format:** `--model_1 --GBDTS[XX]`
 ## Model Categories and Formats
 
-### 1. WGS_CSBD Models
-**Command Format:** `--wgs_csbd --CSBDTS[XX]`
-**Special Features:**
+### 1. model_1 Models
+### 4. GBDF GRS Models
+**Command Format:** `--model_1 --GBDTS[XX]`
 - Header/footer transformation
 - Random 11-digit KEY_CHK_DCN_NBR generation
 - Root and payload modifications
-
-### 2. WGS_NYK Models
+### 5. GBDF MMP Models
+**Command Format:** `--model_1 --GBDTS[XX]` (e.g. GBDTS65, GBDTS66). Postman collections use Timber GetRecommendations URL.
 **Command Format:** `--wgs_nyk --NYKTS[XXX]`
 **Important:** Must use NYKTS prefix, not TS
 
-### 3. GBDF MCR Models
-**Command Format:** `--gbdf_mcr --GBDTS[XX]`
+# Test the new model
+python main_processor.py --model_1 --[MODEL_ID]
 
 ### 4. GBDF GRS Models
-**Command Format:** `--gbdf_grs --GBDTS[XX]`
+**Command Format:** `--model_3 --GBDTS[XX]`
 
 ### 5. GBDF MMP Models
 **Command Format:** `--gbdf_mmp --GBDTS[XX]` (e.g. GBDTS65, GBDTS66). Postman collections use Timber GetRecommendations URL.
 
-## Adding New Models
-
-### Step 1: Directory Structure Setup
-Create the required directory structure:
-```
-source_folder/[Category]/[Model_Name]/
+# Single model
+python main_processor.py --model_1 --CSBDTS01
+python main_processor.py --wgs_nyk --NYKTS124
+python main_processor.py --model_1 --GBDTS47
+python main_processor.py --model_1 --GBDTS49
+python main_processor.py --model_1 --GBDTS66
 ├── payloads/
 │   ├── regression/
 │   └── smoke/
@@ -49,17 +49,14 @@ source_folder/[Category]/[Model_Name]/
 ```
 
 **Important:** Folders must end with `_sur` for source, `_dis` for destination.
-
-### Step 2: Model Configuration
-
-#### Option A: Dynamic Discovery (Preferred)
-Models are automatically discovered by `dynamic_models.py` if they follow the correct naming pattern.
-
+# All models of a type
+python main_processor.py --model_1 --all
+python main_processor.py --wgs_nyk --all
 #### Option B: Static Configuration
 Add to `models_config.py` in `STATIC_MODELS_CONFIG`:
 ```python
 'NEW_MODEL': {
-    'category': 'wgs_csbd',  # or other category
+    'category': 'model_1',  # or other category
     'ts_number': 'TS01',
     'display_name': 'New Model Display Name',
     'description': 'Model description',
@@ -78,10 +75,10 @@ python main_processor.py --[category] --[MODEL_ID]
 
 ## Model-Specific Configurations
 
-### WGS_CSBD Special Handling
+### model_1 Special Handling
 ```python
 # In rename_files.py or model-specific handler
-def apply_wgs_csbd_transformations(data):
+def apply_model_1_transformations(data):
     # Add KEY_CHK_DCN_NBR
     # Apply header/footer transformations
     # Handle special naming conventions
@@ -209,15 +206,15 @@ CUSTOM_MODEL_ENDPOINT=https://api.example.com
 python main_processor.py --list
 
 # Test specific model
-python main_processor.py --wgs_csbd --CSBDTS01
+python main_processor.py --model_1 --CSBDTS01
 python main_processor.py --gbdf_mmp --GBDTS66
 
 # Batch process all models
 python main_processor.py --all
 
 # Process with RefDB
-python main_processor.py --wgs_csbd --CSBDTS46 --refdb
+python main_processor.py --model_1 --CSBDTS46 --refdb
 
 # Generate reports only
-python main_processor.py --wgs_csbd --CSBDTS01 --reports-only
+python main_processor.py --model_1 --CSBDTS01 --reports-only
 ```

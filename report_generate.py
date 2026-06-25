@@ -16,9 +16,9 @@ FEATURES:
 - JSON renaming timing reports
 - Summary statistics and session summaries
 
-REPORT COLUMNS:
+-REPORT COLUMNS:
 - TC#ID: Test Case ID extracted from filename
-- Model LOB: Model line of business (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+- Model LOB: Model line of business (model_1)
 - Model Name: Model name (Covid, Multiple E&M Same day, etc.)
 - Edit ID: Edit identifier (e.g., rvn001, rvn002)
 - EOB Code: EOB code (e.g., 00W5, 00W6)
@@ -131,7 +131,7 @@ class ExcelReportGenerator:
         
         Args:
             tc_id: Test Case ID
-            model_lob: Model LOB (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+            model_lob: Model LOB (model_1)
             model_name: Model name (Covid, Multiple E&M Same day, etc.)
             edit_id: Edit identifier
             eob_code: EOB code
@@ -169,7 +169,7 @@ class ExcelReportGenerator:
         
         Args:
             filename: Custom filename for the report
-            model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK) for filename generation
+            model_type: Type of model (model_1) for filename generation
             
         Returns:
             Path to the generated Excel file
@@ -426,7 +426,7 @@ def create_excel_reporter_for_model_type(model_type: str) -> ExcelReportGenerato
     This ensures separate data collection for different model types.
     
     Args:
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+        model_type: Type of model (model_1)
         
     Returns:
         New ExcelReportGenerator instance
@@ -469,8 +469,8 @@ def extract_model_name_from_source_dir(source_dir):
         return "Unspecified dx code prof"
     elif "Laterality" in source_dir:
         return "Laterality Policy"
-    elif "Revenue code Services not payable" in source_dir:
-        return "Revenue code Services not payable on Facility claim"
+    elif 'revenue' in source_dir.lower() and 'service' in source_dir.lower():
+        return "Revenue Services"
     elif "Lab panel" in source_dir:
         return "Lab panel Model"
     elif "Device Dependent" in source_dir:
@@ -506,7 +506,7 @@ def generate_timing_report_for_model(model_config, model_type):
     
     Args:
         model_config: Dictionary containing model configuration
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+        model_type: Type of model (model_1)
     """
     print(f"Processing model: TS_{model_config.get('ts_number', '??')} ({model_config['edit_id']}_{model_config['code']})")
     print(f"Model Type: {model_type}")
@@ -647,7 +647,7 @@ def generate_json_renaming_timing_report(timing_data, model_config, model_type, 
     Args:
         timing_data: List of timing records
         model_config: Model configuration dictionary
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+        model_type: Type of model (model_1)
         total_time: Total processing time in milliseconds
     """
     # Create list_reports directory if it doesn't exist
@@ -727,7 +727,7 @@ def generate_excel_timing_report(excel_reporter, model_type=None):
     
     Args:
         excel_reporter: ExcelReportGenerator instance
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK) for filename generation
+        model_type: Type of model (model_1) for filename generation
         
     Returns:
         Path to generated Excel report, or None if generation failed
@@ -765,7 +765,7 @@ def create_excel_reporter_for_processing(model_type=None):
     Create and initialize an Excel reporter for processing operations.
     
     Args:
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+        model_type: Type of model (model_1)
         
     Returns:
         ExcelReportGenerator instance with timing session started
@@ -785,7 +785,7 @@ def create_excel_reporter_for_batch_processing(model_type=None):
     Create and initialize an Excel reporter for batch processing operations.
     
     Args:
-        model_type: Type of model (WGS_CSBD, GBDF_MCR, GBDF_GRS, WGS_NYK)
+        model_type: Type of model (model_1)
         
     Returns:
         ExcelReportGenerator instance with timing session started
@@ -815,7 +815,7 @@ if __name__ == "__main__":
     # Add some test records
     reporter.add_timing_record(
         tc_id="TS_01_12345",
-        model_lob="WGS_CSBD",
+        model_lob="model_1",
         model_name="Covid",
         edit_id="rvn001",
         eob_code="W04",
@@ -825,7 +825,7 @@ if __name__ == "__main__":
     
     reporter.add_timing_record(
         tc_id="TS_47_99202",
-        model_lob="GBDF_MCR",
+        model_lob="model_1",
         model_name="Covid",
         edit_id="rvn001",
         eob_code="v04",
