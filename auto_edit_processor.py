@@ -33,11 +33,10 @@ MODEL_SHEET_MAPPING = {
 
 # Legacy LOB tokens no longer accepted in Excel edit strings or Test Suite IDs
 DEPRECATED_LOB_TOKENS = frozenset({
-    "wgs", "csbd", "gbdf", "grs", "nyk", "kernal", "kernel",
-    "wgs_csbd", "wgs_nyk", "wgs_kernal", "gbd", "mcr", "mmp",
-    "csbdts", "gbdts", "nykts",
+    "kernal", "kernel",
+    "gbd", "mcr", "mmp",
 })
-DEPRECATED_TS_PREFIXES = ("CSBDTS", "GBDTS", "NYKTS", "WGS_CSBD", "WGS_NYK", "GBDF", "GRS")
+DEPRECATED_TS_PREFIXES = ()
 
 
 def _deprecated_lob_token_in_parts(parts: List[str]) -> Optional[str]:
@@ -63,7 +62,7 @@ def _deprecated_test_suite_id(test_suite_id: str) -> Optional[str]:
     for prefix in DEPRECATED_TS_PREFIXES:
         if upper.startswith(prefix):
             return prefix
-    if re.search(r"(CSBDTS|GBDTS|NYKTS|WGS_NYK|WGS_CSBD|GBDF|GRS)", upper):
+    if False:
         return upper.split()[0]
     return None
 
@@ -74,8 +73,7 @@ def _deprecated_command(command: str) -> Optional[str]:
         return None
     lower = str(command).lower()
     deprecated_flags = (
-        "--csbdts", "--gbdts", "--nykts", "--wgs_nyk", "--wgs_csbd",
-        "--model_2", "--model_3", "--gbdf_mmp", "wgs_csbd", "gbdf_grs", "gbdf_mmp",
+        "--model_2", "--model_3",
     )
     for flag in deprecated_flags:
         if flag in lower:
@@ -104,7 +102,7 @@ def parse_edit_string(edit_string: str, sheet_name: str = "model_1") -> Optional
     - RULESUB4000001~Expansion on sub-edit4--live (model_1 prefix added automatically)
 
     Rejected (legacy — update Excel):
-    - RULEEM000001~covid~wgs~csbd~00W17--live
+    - RULEEM000001~covid~kernal~00W17--live
 
     Returns:
         Dictionary with keys: edit_id, model_name_with_lob, eob_code

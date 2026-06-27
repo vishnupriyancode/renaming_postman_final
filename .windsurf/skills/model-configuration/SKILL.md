@@ -8,40 +8,21 @@ description: Add and configure new healthcare models in the test-case automation
 ## Purpose
 Guide the process of adding new healthcare models to the automation system, including configuration setup, testing, and deployment.
 ### 1. model_1 Models
-**Command Format:** `--model_1 --CSBDTS[XX]`
-- Adding new model_1, WGS_NYK, GBDF MCR, GBDF GRS, or GBDF MMP models
+**Command Format:** `--model_1 --TS[XX]`
+- Adding new model_1 models
 - Updating existing model configurations
 - Troubleshooting model discovery issues
-### 3. GBDF MCR Models
-**Command Format:** `--model_1 --GBDTS[XX]`
 ## Model Categories and Formats
 
 ### 1. model_1 Models
-### 4. GBDF GRS Models
-**Command Format:** `--model_1 --GBDTS[XX]`
-- Header/footer transformation
-- Random 11-digit KEY_CHK_DCN_NBR generation
-- Root and payload modifications
-### 5. GBDF MMP Models
-**Command Format:** `--model_1 --GBDTS[XX]` (e.g. GBDTS65, GBDTS66). Postman collections use Timber GetRecommendations URL.
-**Command Format:** `--wgs_nyk --NYKTS[XXX]`
-**Important:** Must use NYKTS prefix, not TS
 
 # Test the new model
 python main_processor.py --model_1 --[MODEL_ID]
 
-### 4. GBDF GRS Models
-**Command Format:** `--model_3 --GBDTS[XX]`
-
-### 5. GBDF MMP Models
-**Command Format:** `--gbdf_mmp --GBDTS[XX]` (e.g. GBDTS65, GBDTS66). Postman collections use Timber GetRecommendations URL.
 
 # Single model
-python main_processor.py --model_1 --CSBDTS01
-python main_processor.py --wgs_nyk --NYKTS124
-python main_processor.py --model_1 --GBDTS47
-python main_processor.py --model_1 --GBDTS49
-python main_processor.py --model_1 --GBDTS66
+python main_processor.py --model_1 --TS01
+python main_processor.py --model_1 --TS49
 ├── payloads/
 │   ├── regression/
 │   └── smoke/
@@ -51,7 +32,6 @@ python main_processor.py --model_1 --GBDTS66
 **Important:** Folders must end with `_sur` for source, `_dis` for destination.
 # All models of a type
 python main_processor.py --model_1 --all
-python main_processor.py --wgs_nyk --all
 #### Option B: Static Configuration
 Add to `models_config.py` in `STATIC_MODELS_CONFIG`:
 ```python
@@ -206,15 +186,14 @@ CUSTOM_MODEL_ENDPOINT=https://api.example.com
 python main_processor.py --list
 
 # Test specific model
-python main_processor.py --model_1 --CSBDTS01
-python main_processor.py --gbdf_mmp --GBDTS66
+python main_processor.py --model_1 --TS01
 
 # Batch process all models
 python main_processor.py --all
 
 # Process with RefDB
-python main_processor.py --model_1 --CSBDTS46 --refdb
+python main_processor.py --model_1 --TS46 --refdb
 
 # Generate reports only
-python main_processor.py --model_1 --CSBDTS01 --reports-only
+python main_processor.py --model_1 --TS01 --reports-only
 ```

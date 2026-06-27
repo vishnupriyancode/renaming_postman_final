@@ -24,8 +24,8 @@ trigger: model_decision
 - **Format:** Postman v2.1.0; request names/IDs derived from renamed JSON filenames (TC#ID#EditID#Code#Suffix).
 - Do not manually change EditID or Code segments in filenames; they come from `models_config` / discovery.
 
-## model_1-Only Behavior
-- Header/footer transformation and random 11-digit `KEY_CHK_DCN_NBR` (root and payload) apply only to model_1. Do not add to GBDF (MCR, GRS, MMP) or WGS_NYK payloads.
+## model_1 Behavior
+- Header/footer transformation and random 11-digit `KEY_CHK_DCN_NBR` (root and payload) apply to model_1.
 
 ## Editing JSON Payloads
 - Preserve structure expected by postman_generator (e.g. request body from renamed JSON).

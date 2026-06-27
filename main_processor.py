@@ -311,7 +311,7 @@ Examples:
             return ts_number_raw
 
     ts_models = []
-    legacy_prefixes = ("--CSBDTS", "--GBDTS", "--NYKTS", "--WGS_NYK", "--WGS_CSBD", "--MODEL_2", "--MODEL_3", "--GBDF_MMP")
+    legacy_prefixes = ("--MODEL_2", "--MODEL_3")
     for arg in unknown_args:
         upper = arg.upper()
         for prefix in legacy_prefixes:

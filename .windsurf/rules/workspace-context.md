@@ -7,30 +7,26 @@ trigger: always_on
 # Renaming Files Project — Workspace Context
 
 ## Project Purpose
-Healthcare test-case automation: renames JSON files (e.g. `TC#ID#deny.json` → `TC#ID#EditID#Code#LR.json`) and generates Postman API collections. Supports model_1, GBDF MCR/GRS/MMP, WGS_NYK.
+Healthcare test-case automation: renames JSON files (e.g. `TC#ID#deny.json` → `TC#ID#EditID#Code#LR.json`) and generates Postman API collections. Supports model_1.
 
 ## Code Location
 **Python modules live in the parent directory** of this workspace (`../`), not inside `renaming_files/`. Key files: `main_processor.py`, `rename_files.py`, `postman_generator.py`, `models_config.py`, `dynamic_models.py`, `report_generate.py`, `refdb_change.py`, `auto_edit_processor.py`, `postman_cli.py`.
 
 ## Entry Points
--- **Orchestrator:** `python main_processor.py --[category] --[TS]` (e.g. `--model_1 --CSBDTS49`, `--wgs_nyk --NYKTS124`, `--model_1 --GBDTS47`, `--model_1 --GBDTS66`).
+- **Orchestrator:** `python main_processor.py --model_1 --TS[XX]` (e.g. `--model_1 --TS01`, `--model_1 --TS49`).
 - **List models:** `python main_processor.py --list`
 - **Batch:** `--all`; skip Postman: `--no-postman`
-- **RefDB:** `--refdb` for refdb-supported models (e.g. CSBDTS46/47/59).
+- **RefDB:** `--refdb` for refdb-supported models (e.g. TS01, TS02).
 
 ## Model Command Formats (Strict)
--- **model_1:** `--model_1 --CSBDTS[XX]` (e.g. CSBDTS01, CSBDTS49).
-- **WGS_NYK:** `--wgs_nyk --NYKTS[XXX]` — must use NYKTS prefix, not TS.
--- **GBDF MCR:** `--model_1 --GBDTS[XX]` (e.g. GBDTS47, GBDTS138).
--- **GBDF GRS:** `--model_1 --GBDTS[XX]` (e.g. GBDTS49, GBDTS139).
--- **GBDF MMP:** `--model_1 --GBDTS[XX]` (e.g. GBDTS65, GBDTS66).
+- **model_1:** `--model_1 --TS[XX]` (e.g. TS01, TS49).
 
 ## Key Paths
 - Source: `source_folder/[Category]/.../payloads/regression` (or smoke). Folders end with `_sur`.
 - Output: `renaming_jsons/[Category]/.../payloads/`, `postman_collections/[Category]/`, `reports/Collection_Reports/`. Dest folders end with `_dis`.
 
 ## Conventions
-- model_1 only: header/footer transformation + random 11-digit KEY_CHK_DCN_NBR (root and payload). GBDF (MCR/GRS/MMP)/WGS_NYK do not.
+- model_1: header/footer transformation + random 11-digit KEY_CHK_DCN_NBR (root and payload).
 - Suffix mapping: deny→LR, bypass→NR; exclusion→EX. Timing in reports is milliseconds.
 - Discovery: `dynamic_models.py` discovers TS folders; fallback is `STATIC_MODELS_CONFIG` in `models_config.py`.
 
@@ -50,7 +46,6 @@ Healthcare test-case automation: renames JSON files (e.g. `TC#ID#deny.json` → 
 6. `refdb_change.py` → RefDB integration (when enabled)
 
 ## Gotchas
-- WGS_NYK fails with `--TSXX`; use `--NYKTS122` etc.
 - Source/dest paths must include `/payloads/`. TS numbers normalized (1→01, 122 stays 122).
 - Excel file `edits_list.xlsx` contains mapping data for auto-edit processor.
 - Temporary files in `__pycache__/` can be safely ignored/deleted.

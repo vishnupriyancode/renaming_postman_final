@@ -18,8 +18,7 @@ Help debug and troubleshoot issues with the file renaming automation system, inc
 
 ### 1. Check Model Command Format
 Verify the correct command format is being used:
-- model_1 / GBDF: `--model_1 --CSBDTS[XX]` or `--model_1 --GBDTS[XX]`
-- WGS_NYK: `--wgs_nyk --NYKTS[XXX]` (must use NYKTS prefix)
+- model_1: `--model_1 --TS[XX]`
 
 ### 2. Verify Source Paths
 Check that source paths follow the pattern:
@@ -64,8 +63,6 @@ Review generated reports in `reports/Collection_Reports/` for:
 
 ## Common Issues and Solutions
 
-### Issue: WGS_NYK models fail with `--TSXX`
-**Solution:** Use `--NYKTS122` format instead of `--TS122`
 
 ### Issue: Files not found in source directory
 **Solution:** Verify source paths include `/payloads/` and folders end with `_sur`
@@ -83,7 +80,7 @@ Review generated reports in `reports/Collection_Reports/` for:
 python main_processor.py --list
 
 # Test with specific model (example)
-python main_processor.py --model_1 --CSBDTS01
+python main_processor.py --model_1 --TS01
 
 # Check environment settings
 cat .env

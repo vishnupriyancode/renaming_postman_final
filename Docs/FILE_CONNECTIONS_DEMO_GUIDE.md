@@ -141,7 +141,7 @@ def process_model(model_config, generate_postman=True):
 **Key Functions**:
 - **Pattern Recognition**: Uses regex to identify TS folder patterns
 - **Model Extraction**: Extracts edit IDs, codes, and metadata from folder names
-- **Flexible Discovery**: Supports both model_1 and GBDF model types
+- **Flexible Discovery**: Supports model_1 model types
 - **Normalization**: Handles different TS number formats (01, 1, 001)
 
 **Connections**:
@@ -234,7 +234,7 @@ def extract_model_info_from_directory(dest_dir, renamed_files):
 **Key Functions**:
 - **Collection Generation**: Creates Postman v2.1.0 format collections
 - **Request Creation**: Converts JSON files into API requests
-- **Header Management**: Applies appropriate headers for model_1 vs GBDF models
+- **Header Management**: Applies appropriate headers for model_1 models
 - **Validation**: Validates generated collections
 
 **Connections**:
@@ -244,11 +244,11 @@ def extract_model_info_from_directory(dest_dir, renamed_files):
 **Key Code Sections**:
 ```python
 class PostmanCollectionGenerator:
-    def generate_postman_collection(self, collection_name, custom_filename=None, is_gbdf_model=False):
+    def generate_postman_collection(self, collection_name, custom_filename=None):
         # Create Postman collection from JSON files
-        # Handle different model types (model_1 vs GBDF)
+        # Handle model_1 model type
         
-    def _create_postman_request(self, json_file_path, parsed_info, is_gbdf_model=False):
+    def _create_postman_request(self, json_file_path, parsed_info):
         # Convert JSON file to Postman request
 ```
 
@@ -329,7 +329,7 @@ def handle_generate(args):
 
 ### **Example 1: Complete Workflow (Most Common)**
 ```bash
-python main_processor.py --model_1 --CSBDTS01
+python main_processor.py --model_1 --TS01
 ```
 
 **Flow Diagram**:
@@ -472,7 +472,7 @@ from postman_generator import PostmanCollectionGenerator
 ### **For Your Demo, Emphasize**:
 
 1. **🔄 Automation**: The system automatically discovers models without manual configuration
-2. **🎯 Flexibility**: Supports both model_1 and GBDF model types
+2. **🎯 Flexibility**: Supports model_1 model types
 3. **📁 File Processing**: Converts files from old naming to new standardized format
 4. **🚀 API Testing**: Generates ready-to-use Postman collections
 5. **🛠️ CLI Interface**: User-friendly command-line interface for all operations
@@ -527,7 +527,7 @@ python postman_cli.py generate --collection-name "DemoCollection"
 
 ### **Live Demo (5 minutes)**:
 1. Show model discovery: `python main_processor.py --list`
-2. Process a model: `python main_processor.py --model_1 --CSBDTS01`
+2. Process a model: `python main_processor.py --model_1 --TS01`
 3. Show generated files, Postman collection, and Excel timing report
 4. Demonstrate standalone Postman operations
 
